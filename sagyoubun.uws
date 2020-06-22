@@ -1907,5 +1907,15 @@ FUNCTION fuk(txt,color=3,fontsize="") //吹き出し指定色でメッセージ�
     RESULT=1
 FEND
 
-tesuto
+Procedure	Th_InputIME() //日本語入力に切替_表示関係
+	MouseOrg(Get_InputHND())
+		If	! GetKeyState(TGL_IME)	Then KBD(VK_KANJI)// 日本語入力に変更
+	MouseOrg(0)
+FEnd
+
+Function	Get_InputHND(a_Title = "") //入力履歴の管理。表示選択付。_表示関係
+	If	a_Title = ""	Then a_Title = GET_UWSC_NAME
+	Result	= IDtoHND(GetID(a_Title, "TFInpBox.UnicodeClass", 3))
+FEnd
+
 endclass
