@@ -1,0 +1,1911 @@
+//------------------com関係
+//------------------ウィンドウ関係
+//------------------エクセル関係
+//------------------キー処理
+//------------------コマンド
+//------------------スクレイピング
+//------------------ファイル操作
+//------------------マウス関係
+//------------------情報取得
+//------------------条件判定
+//------------------正規表現
+//------------------日付操作
+//------------------配列
+//------------------連想配列
+//------------------表作成
+//------------------表示関係
+//------------------文字列加工
+//------------------変数
+//------------------画像判定
+//------------------ダウンロード
+//------------------デバッグ
+//------------------その他
+
+//関数名付け方
+	//日本語を英訳
+	//区切り 「_」2つまで
+
+// r_fp:Text読込ファイルパスの読み込み
+// w_fp:Text書込ファイルパス作成
+// e_r_fp:Excel読込ファイルパスの読み込み
+// e_w_fp:Excel書込ファイルパスの読み込み
+// str:ファイル内容
+// url:url名
+	// url+n~:url一部
+	//url0:url完全
+
+// exe:アプリフルパス
+// search:検索後
+// i=n 初期値(initi#alization)
+// arr:配列
+// len lengthの変数
+//Odd:奇数
+//Even:偶数
+//ext:拡張子(extension)
+
+// o_xl:エクセル オブジェクト
+// o_wb:エクセル オブジェクトに付属するワークブック
+// o_ws:ワークブック オブジェクトに付属するワークシート o_WS
+
+
+//------------------com関係
+IF GET_UWSC_NAME = "uwsc_class_new.uws" then
+	url="http://keiritensyoku.net"
+	COMMON.IE_Connection(url)
+endif
+CLASS COMMON
+
+function Google_Connection(url_keyword) //chrome接続_url
+
+	exe="C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+	search="http"
+
+	han=pos(search,url_keyword)
+
+	if pos(search,url_keyword)>0 then
+		dim cmd[] = "start",url_keyword
+		doscmd(join(cmd))
+	else
+		url1 ="http://www.google.co.jp/search?hl=ja&lr=lang_ja&pws=0&q="
+		keyword=url1+url_keyword
+		msg=keyword
+		print msg
+
+		exec( exe + " " + "<#DBL>"+ keyword +"<#DBL>")
+	endif
+
+	sec=1
+	SLEEP(sec)
+
+	id1=GETID("Google Chrome")
+
+	ctrlwin(id1,MAX)
+	result = true
+fend
+
+
+function Ie_Connection(url) //スクレイピング用1_最速_com関係
+
+	Try
+		　IE = CreateOleObj("InternetExplorer.Application")
+
+	Except
+		　Exec("<#DBL>C:\Program Files\Internet Explorer\iexplore.exe<#DBL> -embedding")
+
+　//| 獲得漏れ対策
+　Repeat
+	　　Com_Err_Ign
+	　　IE = GetActiveOleObj("InternetExplorer.Application")
+	　　Com_Err_Ret
+　Until ! COM_ERR_FLG
+EndTry
+IE.visible = true
+IE.navigate(url)
+REPEAT
+	SLEEP(0.1)
+UNTIL !IE.busy AND IE.readystate = 4
+id =hndtoid(IE.hwnd)
+ctrlwin(id,MAX)
+result = IE
+fend
+
+
+function Connection_Vis(url,vis=false) //スクレイピング用_visible非表示
+
+	Try
+		　IE = CreateOleObj("InternetExplorer.Application")
+
+	Except
+		　Exec("<#DBL>C:\Program Files\Internet Explorer\iexplore.exe<#DBL> -embedding")
+
+　//| 獲得漏れ対策
+　Repeat
+	　　Com_Err_Ign
+	　　IE = GetActiveOleObj("InternetExplorer.Application")
+	　　Com_Err_Ret
+　Until ! COM_ERR_FLG
+EndTry
+IE.visible = vis
+IE.navigate(url)
+REPEAT
+	SLEEP(0.1)
+UNTIL !IE.busy AND IE.readystate = 4
+id =hndtoid(IE.hwnd)
+result = IE
+fend
+
+
+function Ie_Connection_User(url,user) //認証が必要なサイト接続
+
+	Try
+		　IE = CreateOleObj("InternetExplorer.Application")
+	Except
+		　Exec("<#DBL>C:\Program Files\Internet Explorer\iexplore.exe<#DBL> -embedding")
+　//| 獲得漏れ対策
+　Repeat
+	　　Com_Err_Ign
+	　　IE = GetActiveOleObj("InternetExplorer.Application")
+	　　Com_Err_Ret
+　Until ! COM_ERR_FLG
+EndTry
+
+IE.visible = True
+IE.navigate(url)
+REPEAT
+	SLEEP(0.1)
+UNTIL !IE.busy AND IE.readystate = 4
+id =hndtoid(IE.hwnd)
+
+IESetData(IE,user,"log") // TEXT
+sckey(id, VK_TAB)
+
+// IESetData(IE,pass,"pwd") // PASSWORD
+
+IESetData(IE,True,"wp-submit") // SUBMIT ログイン
+ctrlwin(id,max)
+REPEAT
+	SLEEP(0.1)
+UNTIL !IE.busy AND IE.readystate = 4
+result =IE
+fend
+
+function Ie_Connection_Tabs1(r_fp) //リンクファイルにあるリンク一気に開く_com関係
+	Dim hai = ArrayCreate(r_fp)
+
+	for i = resize(hai) to 0 step-1
+
+		if i=resize(hai) then
+			TRY
+				　　　IE = CREATEOLEOBJ("InternetExplorer.Application")
+			　　EXCEPT
+				　　　EXEC("C:\Program Files\Internet Explorer\iexplore.exe")
+				　　　IE = GETACTIVEOLEOBJ("InternetExplorer.Application")
+			　　ENDTRY
+			　IE.Visible = True
+			IE.navigate(hai[resize(hai)])
+			REPEAT
+				SLEEP(0.1)
+			UNTIL !IE.busy AND IE.readystate = 4
+		else
+			IE.navigate(hai[i],$1)
+		endif
+		result=IE
+	next
+fend
+
+function Ie_Connection_Tabs2(str) //各行のリンク全内容をタブで開いていく_com関係
+	LOGPRINT(FALSE)
+
+	hai=ArrayCreate1(str)
+
+	try
+		　　　IE = CREATEOLEOBJ("InternetExplorer.Application")
+	EXCEPT
+		　　　EXEC("C:\Program Files\Internet Explorer\iexplore.exe")
+		　　　IE = GETACTIVEOLEOBJ("InternetExplorer.Application")
+	ENDTRY
+	IE.visible = true
+
+	IE.navigate(hai[0])
+	id = hndtoid(IE.hwnd)
+	ctrlwin(id, max)
+	SLEEP(0.5)
+
+	for i = 1 to length(hai)-1
+		IE.navigate(hai[i],$800)
+		SLEEP(0.5)
+		id = hndtoid(IE.hwnd)
+		ctrlwin(id, max)
+		SLEEP(0.5)
+	next
+	result = IE
+fend
+
+function Row_Keyword_Ieconnection(str,keyword) //各行のテキストにキーワードを追加して検索_com関係
+	tes =""
+	url1 ="http://www.google.co.jp/search?hl=ja&lr=lang_ja&pws=0&q="
+
+	hai=ArrayCreate1(str)
+	TRY
+		　　　IE = CREATEOLEOBJ("InternetExplorer.Application")
+	EXCEPT
+		　　　EXEC("C:\Program Files\Internet Explorer\iexplore.exe")
+		　　　IE = GETACTIVEOLEOBJ("InternetExplorer.Application")
+	ENDTRY
+
+	IE.visible = true
+
+for i = length(hai)-1 to 0 step -1//10URL接続
+	if i=LENGTH(hai)-1 then
+		IE.navigate(tes+url1+hai[i]+" "+keyword)
+	endif
+	IE.navigate(tes+url1+hai[i]+" "+keyword,$1)
+	sleep(0.5)
+next
+result = IE
+fend
+
+
+PROCEDURE Busywait(IE) //遷移ウェイト1_com関係
+	REPEAT
+		SLEEP(0.1)
+	UNTIL !IE.busy AND IE.readystate = 4
+fend
+
+
+
+PROCEDURE Busywait1(IE) //遷移ウェイト2_com関係
+	SLEEP(0.5)
+	ClkItem(GetID("Windows", "#32770", 1), "OK")
+	ClkItem(GetID("Windows", "#32770", 1), "このページから移動")
+	ClkItem(GetID("Windows", "#32770", 1), "プログラムを終了します")
+	ClkItem(GetID("Windows", "#32770", 1), "プログラムを再起動します")
+	ClkItem(GetID("ページからのメッセージ", "#32770", 1), "OK")
+	ClkItem(GetID("ページからのメッセージ", "#32770", 1), "このページから移動")
+	ClkItem(GetID("ページからのメッセージ", "#32770", 1), "プログラムを終了します")
+	ClkItem(GetID("ページからのメッセージ", "#32770", 1), "プログラムを再起動します")
+	CONST TIME_OUT = 60
+	tm = Gettime()
+	REPEAT
+		SLEEP(1)
+		ifb Gettime() - tm > TIME_OUT
+			break
+		endif
+	UNTIL (! IE.BUSY) AND (IE.READYSTATE=4)
+	SLEEP(0.5)
+FEND
+
+function G_Busywait(driver, selector) //クローム版wait
+	　repeat
+		　　result = driver.FindElement(selector)
+	　until result <> NULL
+fend
+
+PROCEDURE Max_Active(title) //画面の最大化_ACTIVATE_com関係
+	CTRLWIN(GETID(title), MAX)
+	CTRLWIN(GETID(title), ACTIVATE)
+FEND
+
+PROCEDURE Ie_Close1() //全IEクローズ_com関係
+	for i = 0 to GETALLWIN()-1
+		if POS("iexplore.exe",　STRCONV(STATUS(ALL_WIN_ID[i], ST_PATH),SC_LOWERCASE)) <>  0 then CTRLWIN(ALL_WIN_ID[i], CLOSE)
+		next
+FEND
+
+PROCEDURE Ie_Close2(targetSITE) //IEのウィンドウを全て閉じる_com関係
+
+	for i = 0 to GETALLWIN()-1
+		IFb POS("iexplore.exe",　STRCONV(STATUS(ALL_WIN_ID[i], ST_PATH),SC_LOWERCASE)) <> 0 then
+			IFb targetSITE = "" then
+				// targetSITEが空欄の場合は全ての画面を削除
+				CTRLWIN(ALL_WIN_ID[i], CLOSE)
+			else
+				// targetSITEが指定されている場合は当該画面のみ削除
+				IFb pos(targetSITE, STATUS(ALL_WIN_ID[i], ST_TITLE)) > 0 then
+					CTRLWIN(ALL_WIN_ID[i], CLOSE)
+				endif
+			endif
+		endif
+	next
+FEND
+
+procedure Ie_Idget(url) //IEが起動していればID取得、指定のURLでIEを起動_com関係
+	TRY
+		IE = GETACTIVEOLEOBJ("InternetExplorer.Application")
+		nID = hndtoid(IE.hwnd)
+
+	EXCEPT
+		IE = CREATEOLEOBJ("InternetExplorer.Application")
+		IE.visible = true
+		IE.navigate(url)
+		nID = hndtoid(IE.hwnd)
+	ENDTRY
+fend
+
+procedure Ie_Write1(source) //IEに直書き_com関係
+
+	TRY
+		ie = GETACTIVEOLEOBJ("InternetExplorer.Application")
+	　EXCEPT
+		ie = CREATEOLEOBJ("InternetExplorer.Application")
+		ie.visible = true
+	endtry
+	ie.navigate("about:blank")
+	ie.document.write(source)
+	ie.visible	= TRUE
+fend
+
+procedure	Ie_Write2(source, a_visible = TRUE)	//IEに直書き2_com関係
+TRY
+		ie = GETACTIVEOLEOBJ("InternetExplorer.Application")
+	　EXCEPT
+		ie = CREATEOLEOBJ("InternetExplorer.Application")
+		ie.visible = true
+endtry
+
+	With	ie
+		.menubar	= FALSE
+		.toolbar	= FALSE
+		.statusbar	= FALSE
+		.navigate("about:blank")
+		.document.write(source)
+		.refresh
+		.visible	= a_visible
+	EndWith
+	
+fend
+
+
+function Ie_Alltab() //新規タブのcomIE取得_com関係
+	Dim i, sh = CREATEOLEOBJ("Shell.Application"), wi = sh.Windows
+	For i = 0　　To wi.Count - 1
+		　　If wi.Item[i] = NOTHING Then Continue
+			　　Try
+				　　　　Ifb　　wi.Item[i].Name = "Internet Explorer"
+					　　　　　　IE　　= wi.Item[i]
+					title=IE.LocationName
+					msg=title
+					print msg
+
+					result=IE
+				　　　　EndIf
+			　　Except
+			　　EndTry
+		Next
+	fend
+
+
+function Ie_Active_Gettitle() //IEアクティブタイトル取得_com関係
+	hashtbl hashID
+	hashcnt = 0
+	for i = 0 to getallwin() - 1
+		id = ALL_WIN_ID[i]
+		if STATUS(id, ST_CLASS) = "IEFrame" then
+			hashID[id] =status(id,ST_TITLE)
+		endif
+	next
+
+	str99=chgmoj(hashID[0, HASH_val], " - Internet Explorer","")
+
+	result = str99
+fend
+
+procedure Ie_Rightbottom(IE)	//右下にIEウィンドウを表示
+	id =hndtoid(IE.hwnd)
+	x=1200
+	y=700
+	w=600
+	h=350
+	acw(id, x, y, w, h, 100)
+fend
+
+//------------------ウィンドウ関係
+
+procedure Titlebar_Click(id) //タイトルバークリック_ウィンドウ関係
+	x1 = status(id, ST_x) + status(id, ST_WIDTH) / 2
+	y1 = status(id, ST_Y) + 10
+	mmv(x1, y1)
+	btn(left)
+fend
+
+//------------------エクセル関係
+
+PROCEDURE Excel_Create() //エクセルCOM操作ブック作成まで_エクセル関係
+	EXCEL = CREATEOLEOBJ("EXCEL.APPLICATION")
+	EXCEL.visible = true
+	EXCEL.Workbooks.Add()
+FEND
+
+function Exist_File_Open(e_r_fp,sheet) //エクセル既存ファイル起動_エクセル関係
+	//.xlsm拡張子必要なし
+	EXCEL = CREATEOLEOBJ("Excel.Application")
+	EXCEL.visible = True
+	Excel.WorkBooks.Open(FileName :=e_r_fp)
+	XLACTIVATE( Excel, sheet)
+	result = EXCEL
+fend
+
+
+
+function Excel_Get_Endrow(ColumnNumber) //下から上に探して最初の空欄がある行番号を返す(非表示も考慮される)_エクセル関係
+	excel = GETACTIVEOLEOBJ("Excel.Application")
+	　　dim i_bottomRow = excel.Rows.Count
+	　　dim o_range　　 = excel.Cells(i_bottomRow, ColumnNumber)
+	　　
+	　　dim xlUp = -4162
+　　o_range = o_range.End(xlUp)　　　　　//Ctrl + ↑　と同じ操作
+　　
+　　ifb (empty <> o_range.Value) then　　//空欄でなければ
+　　　　o_range = o_range.Offset(1, 0)　 //一つ下のセル
+　　endif
+　　
+　　result = o_range.Row
+fend
+
+function Get_Contents_Specified_Cell(e_r_fp,sheetname,startcell,endcell) //指定エクセルファイルから情報取得_エクセル関係
+	dim a
+
+	Excel = XLOPEN(e_r_fp,True)
+	XLACTIVATE(Excel, sheetname)
+
+	range=startcell+":"+endcell
+
+dat = XLGETDATA( Excel,range)//配列に入れる
+
+for i in dat
+	a=a+i+"<#CR>"
+next
+result=a
+XLCLOSE( Excel)
+fend
+
+
+procedure Excel_Open2(e_r_fp1,e_r_fp2) //2つエクセルファイルを左右_エクセル関係
+	FUKIDASI("ファイル上で「パスとコピーする」とダブルクォーテーションで囲まれたでパスが取得できるので、<#CR>ダブルクォーテーションを除くパスをinputに入力する事。<#CR>ダブルクォーテーション入ったパスを入力してもエクセルファイル起動しない")
+
+	EXCEL = CREATEOLEOBJ("Excel.Application")
+	EXCEL.visible = True
+	Excel.WorkBooks.Open(FileName :=e_r_fp1)
+	id1=getid("Microsoft Excel")
+	SLEEP(2.0)
+
+	EXCEL1 = CREATEOLEOBJ("Excel.Application")
+	EXCEL1.visible = True
+	Excel1.WorkBooks.Open(FileName :=e_r_fp2)
+
+	id2=getid(GET_ACTIVE_WIN)
+	w = G_SCREEN_W / 2
+	acw(id1, 0, 0, w, G_SCREEN_h)
+	acw(id2, w, 0, w, G_SCREEN_h)
+fend
+
+
+Procedure	Get_Excel_Object(a_Path, var o_XL, var o_WB, a_WB_Visible = TRUE) //excelオブジェクトを確実に取得_エクセル関係
+	Dim FileName	= Copy(a_Path, Pos("\", a_Path, -1) + 1)
+	Ifb	GetID(FileName, "XLMAIN", 0.2) > 0
+		Dim SC	= CreateOleObj("ScriptControl")
+		SC.Language	= "VBScript"
+		SC.AddCode("Function GetObj(Path): set GetObj = GetObject(Path): End Function")
+		
+		Dim obj	= SC.Run("GetObj", a_Path)
+		o_XL	= obj.Application
+		
+		Dim i
+		For i = 1	To o_XL.WorkBooks.Count
+			Ifb	o_XL.WorkBooks[i].Name = FileName
+				o_WB	= o_XL.WorkBooks[i]
+				obj.Parent.Windows(i).Visible	= a_WB_Visible	//	o_WBの可視状態変更。
+			EndIf
+		Next
+	Else
+		o_XL	= CreateOleObj("Excel.Application")
+		o_WB	= o_XL.WorkBooks.Open(FileName := a_Path, ReadOnly := False)
+	EndIf
+FEnd
+
+function Column_Start_Cell_End_Contents_Judgment(start_row,column,Search_word,offset_row,offset_column,r_fp) //指定列で開始セルから終了セルまでセル内容の条件判定で、同じ行の別セルの内容取得していく_エクセル関係
+	Dim EXCEL = CreateOLEObj("Excel.Application")
+	Dim o_WB = EXCEL.WorkBooks.Open(FileName := r_fp, ReadOnly := False)
+
+	EXCEL.Visible  = TRUE
+	EXCEL.DisplayAlerts  = FALSE
+	iColumnNumber=1
+	end_cell=Excel_Get_Endrow(iColumnNumber)-1
+
+
+	for i = start_row to end_cell
+		excel.range(Column+i).select
+		str=excel.selection.value
+		if str=Search_word then
+			continue
+		else
+			excel.activecell.offset(offset_column,offset_row).select
+		// MSGBOX(EXCEL.ActiveCell.Address() + "に移動しました")
+		  //　読込
+		  str1c=excel.selection.value
+		  msg="str1c "+str1c
+		  print msg
+		  excel.activecell.offset(1,-1).select
+		// MSGBOX(EXCEL.ActiveCell.Address() + "に移動しました")
+	endif
+next
+result = EXCEL
+fend
+
+//時間関係
+Procedure Countdown(start_Second,end_Second,step_time,msg)
+	FOR A = start_Second TO end_Second STEP -step_time
+
+		FUKIDASI(msg + A + "秒",100,100,0,40) 
+		SLEEP(step_time) 
+
+	NEXT
+Fend
+
+
+
+Procedure CountDown1(start) //吹き出し3秒間表示_表示関係
+	dim i
+	for i=start to 1 step -1
+		fukidasi(i + " カウントダウン",0,0)
+		sleep(1)
+	next
+fend
+
+Function	Wait_KeyState(a_Key, a_WaitTime, a_Message = "") //Bool型指定したキーが指定秒以上押されたらTRUE_キー処理
+	Result	= FALSE
+	
+	Ifb GetKeyState(a_Key)
+		start=0
+		Dim EndTime	= (a_WaitTime + GetTime()) * 1000 + G_TIME_ZZ
+		
+		Repeat
+			fukidasi(start)
+			Sleep(0.1)
+			start=start+0.1
+			// Ifb ((GetTime() * 1000 + G_TIME_ZZ) > EndTime)
+			Ifb ((GetTime() * 1000 + G_TIME_ZZ) > EndTime) and (! Result) //(! Result)は2回msgbox(msg)を表示を回避させる為。
+				msg=a_Message
+				msgbox(msg)
+				Result	= TRUE
+			EndIf
+		Until	! GetKeyState(a_Key)
+	EndIf
+FEnd
+
+Function UntilPushedKey(s_KeyState, TimeOut = 30) //Keyが押されるまで待機_キー処理
+	　　　　Result = False
+	　　　　If Copy(s_KeyState, 1, 1) = "(" _
+		　　　　　　Then s_KeyState = Replace(s_KeyState, "(", "(GetKeyState(") _
+	　　　　　　　　Else s_KeyState = "GetKeyState( " + s_KeyState
+		　　　　s_KeyState = Replace(s_KeyState, "or", ") or GetKeyState(")
+		　　　　s_KeyState = Replace(s_KeyState, "and", ") and GetKeyState(") + ")"
+		　　　　Dim t_OldTime = GetTime() * 1000 + G_TIME_ZZ
+		　　　　TimeOut = TimeOut * 1000
+		　　　　Repeat
+			　　　　　　Sleep(0.2)
+			　　　　　　If ((GetTime() * 1000 + G_TIME_ZZ) - t_OldTime) > TimeOut Then Exit
+			　　　　Until Eval(s_KeyState)
+			　　　　Result = True
+		FEnd
+
+Function UntilReleasedKey(s_KeyState, TimeOut = 30) //Keyが離されるまで待機_キー処理
+	　　　　Result = False
+	　　　　If Copy(s_KeyState, 1, 1) = "(" _
+		　　　　　　Then s_KeyState = Replace(s_KeyState, "(", "(!GetKeyState(") _
+	　　　　　　　　Else s_KeyState = "!GetKeyState( " + s_KeyState
+		　　　　s_KeyState = Replace(s_KeyState, "or", ") or !GetKeyState(")
+		　　　　s_KeyState = Replace(s_KeyState, "and", ") and !GetKeyState(") + ")"
+		　　　　Dim t_OldTime = GetTime() * 1000 + G_TIME_ZZ
+		　　　　TimeOut = TimeOut * 1000
+		　　　　Repeat
+			　　　　　　Sleep(0.2)
+			　　　　　　If ((GetTime() * 1000 + G_TIME_ZZ) - t_OldTime) > TimeOut Then Exit
+			　　　　Until Eval(s_KeyState)
+			　　　　Result = True
+		FEnd
+
+
+Function Until_Released_Key(s_KeyState, TimeOut = 10) //Keyが離されるまで待機_キー処理
+	　　　　Result = False
+	　　　　If Copy(s_KeyState, 1, 1) = "(" _
+		　　　　　　Then s_KeyState = Replace(s_KeyState, "(", "(!GetKeyState(") _
+	　　　　　　　　Else s_KeyState = "!GetKeyState( " + s_KeyState
+		　　　　s_KeyState = Replace(s_KeyState, "or", ") or !GetKeyState(")
+		　　　　s_KeyState = Replace(s_KeyState, "and", ") and !GetKeyState(") + ")"
+		　　　　Dim t_OldTime = GetTime() * 1000 + G_TIME_ZZ
+		　　　　TimeOut = TimeOut * 1000
+		　　　　Repeat
+			　　　　　　Sleep(0.2)
+			　　　　　　If ((GetTime() * 1000 + G_TIME_ZZ) - t_OldTime) > TimeOut Then Exit
+			　　　　Until Eval(s_KeyState)
+			　　　　Result = True
+		FEnd
+
+
+function Key_Allocation(hai1[]) //任意配列要素にキー割り当て追加_キー処理_ex)q(a),w(s)
+
+	r_fp="C:\Users\user\Desktop\ひな型\単独\キー割り当て.txt"
+
+	Dim hai = ArrayCreate(r_fp)
+
+	cou=0
+	dim utuwa
+
+	if LENGTH(hai1)<LENGTH(hai) then
+
+		for i in hai1
+			utuwa=utuwa+i+"("+hai[cou]+")"+"<#CR>"
+			cou=cou+1
+		next
+
+	else
+	// msg="キー割り当て要素数以上の配列が指定されています"
+	// msgbox(msg)
+
+	// msg="LENGTH(hai):キー割り当て"+LENGTH(hai)
+	// msgbox(msg)
+
+	// msg="hai[cou]:メイン"+hai[cou]
+	// msgbox(msg)
+
+	for i = 0 to LENGTH(hai)-1
+		utuwa=utuwa+hai1[cou]+"("+hai[cou]+")"+"<#CR>"
+		cou=cou+1
+	next
+
+endif
+
+result = utuwa
+fend
+
+
+function SlcKeyAllocation(type, timeout, msg, item[]) //キー割り当て2_キー処理
+//type:SLCT_BTN,SLCT_CHK,SLCT_RDO
+
+　const slct_order = "asdfjkl;gh:qweruiopzxcvnm,.tyb@"
+　　i = 0
+
+　　for l in slct_order
+	　　　item[i] = item[i] + " (&" + l + ")"
+	　　　i = i + 1
+
+　　　if i >= length(item) then //配列要素数を上限として繰り返し
+	　　　　break
+　　　endif
+　　next
+　　result = global.slctbox(type, timeout, msg, item)
+　　result = slctbox(type, timeout, msg, item) //こちらも同じ結果になる
+fend
+
+
+//------------------コマンド
+procedure Cmd(hai[]) //コマンド引数_コマンド
+	a=join(hai)
+	dim cmd[] =a
+	doscmd(join(cmd))
+fend
+//------------------スクレイピング
+
+function Get_Html(url) //バッググラウンドでhtmlソース取得_スクレイピング
+	try
+        Http = CreateOleObj("MSXML2.ServerXMLHTTP")// MSXML2.ServerXMLHTTPを呼び出す
+        Stream = CreateOleObj("ADODB.Stream") // ADODB.Streamを呼び出す
+
+        // サイトにアクセスをする。
+        Http.Open("GET",url,False)
+        Http.Send
+
+        // サイトのデータを無理矢理utf-8に変換する。
+        Stream.Open
+        Stream.Type = 1
+        Stream.Write(Http.ResponseBody)
+        Stream.Position = 0
+        Stream.Type = 2
+        Stream.Charset = "utf-8"
+        HtmlText = Stream.ReadText
+        Stream.Close
+
+        // utf-8のデータとResponseTextが一致しない場合は自動判定で変換をする。
+        ifb HtmlText <> Http.ResponseText
+        	Stream.Open
+        	Stream.Type = 1
+        	Stream.Write(Http.ResponseBody)
+        	Stream.Position = 0
+        	Stream.Type = 2
+        	Stream.Charset = "_autodetect"
+        	HtmlText = Stream.ReadText
+        	Stream.Close
+        endif
+
+        result = HtmlText
+    except
+    	result = ""
+    endtry
+fend
+
+
+//その他
+//メモ帳透過_その他
+//使い方、a_ID, a_ALPHA:数字 を設定
+Procedure	Default_Setting()
+	DEF_DLL	SetWindowLongA(hwnd, int, long) :long :user32.dll
+	DEF_DLL	GetWindowLongA(hwnd, int) :long :user32.dll
+	DEF_DLL	SetLayeredWindowAttributes(hwnd, long, byte, dword) :bool :user32.dll
+	Const	WS_EX_LAYERED	= $80000
+	Const	LWA_ALPHA		= 2
+	Const	GWL_EXSTYLE		= -20
+FEnd
+
+Procedure	Set_Alpha_For_Id(a_ID, a_ALPHA) //透過設定変更	ID 指定版_その他
+	Dim	t_hwnd = IDTOHND(a_ID)
+	If	t_hwnd <> 0	Then	Set_ALPHA_for_HWND(t_hwnd, a_ALPHA)
+	FEnd
+
+Procedure	Set_Alpha_For_Hwnd(a_hwnd, a_ALPHA) //透過設定変更	HWND 指定版_その他
+	Dim	t_EXSTYLE	= GetWindowLongA(a_hwnd, GWL_EXSTYLE)
+	Ifb (WS_EX_LAYERED And t_EXSTYLE) = 0
+		SetWindowLongA(a_hwnd, GWL_EXSTYLE, t_EXSTYLE + WS_EX_LAYERED);
+		t_EXSTYLE	= GetWindowLongA(a_hwnd, GWL_EXSTYLE)
+	EndIf
+	SetLayeredWindowAttributes(a_hwnd, 0, a_ALPHA, LWA_ALPHA);
+FEnd
+//メモ帳透過
+
+Procedure Screen_Shot(w_fp,w,h) //アクティブウィンドウスクショ_その他
+	SAVEIMG(w_fp, GETID(GET_ACTIVE_WIN), 0, 0,w,h)
+Fend
+
+Function Vbs(str) //vbsビルド
+	scpt=CreateOleObj("ScriptControl")
+	scpt.language="VBScript"
+	src="Function re():re=$_func_$:End Function"
+	src=Chgmoj(src,"$_func_$",str)
+	scpt.AddCode(src)
+	Result=scpt.Run("re")
+Fend
+
+
+//------------------配列
+
+function ArrayCreate(r_fp) //ファイル内テキストを各行を<#CR>で区切り_配列作成
+	fid= FOpen(r_fp)
+	str= FGet(fid, F_ALLTEXT)
+	Result=split(str,"<#CR>")
+	fclose(fid)
+fend
+
+Function ArrayCreate1(str) //各行テキストで配列作成_配列
+	r_fp="C:\Users\user\Desktop\検証\ダミー\htmlダミー.html"
+	fid=fopen(r_fp,F_WRITE8 or F_NOCR)
+	fput(fid,str)
+	fclose(fid)
+	hai=ArrayCreate(r_fp)
+	Result=hai
+Fend
+
+
+procedure Filter(var arr[], expression) //配列要素から条件抽出し新配列作成_配列
+    try
+        dummy = arr[0, HASH_EXISTS]
+        isHashtbl = TRUE
+    except
+        isHashtbl = FALSE
+    endtry
+
+    if isHashtbl then
+        for key in arr
+            % = arr[key]
+            & = key
+            try
+                res = eval(expression)
+                select res
+                    case TRUE, FALSE
+                    default
+                        res = TRUE
+                selend
+            except
+                msgbox("不正な式: " + expression + "<#CR>% = " + %)
+                exit
+            endtry
+            if ! res then
+                dummy = arr[key, HASH_REMOVE]
+            endif
+        next
+    else
+        dim _arr[resize(arr)]
+        n = 0
+        for % in arr
+            try
+                res = eval(expression)
+                select res
+                    case TRUE, FALSE
+                    default
+                        res = TRUE
+                selend
+            except
+                msgbox("不正な式: " + expression + "<#CR>% = " + %)
+                exit
+            endtry
+            if res then
+                _arr[n] = %
+                n = n + 1
+            endif
+        next
+        for i = 0 to resize(arr, n - 1)
+            arr[i] = _arr[i]
+        next
+    endif
+fend
+
+
+procedure Map(var arr[], expression) //各要素1つずつに対して「コールバック関数」を実行し、その結果を新しい配列として返す_配列
+    try
+        dummy = arr[0, HASH_EXISTS]
+        isHashtbl = TRUE
+    except
+        isHashtbl = FALSE
+    endtry
+
+    if isHashtbl then
+        dummy = arr[0, HASH_EXISTS]
+        for key in arr
+            % = arr[key]
+            & = key
+            try
+                arr[key] = eval(expression)
+            except
+                msgbox("不正な式: " + expression + "<#CR>% = " + %)
+                exit
+            endtry
+        next
+    else
+        for i = 0 to resize(arr)
+            % = arr[i]
+            try
+                arr[i] = eval(expression)
+            except
+                msgbox("不正な式: " + expression + "<#CR>% = " + %)
+                exit
+            endtry
+        next
+    endif
+fend
+
+function ArrSearch(search,r_fp) //ファイル各行を配列で取得、指定単語が含まれていればtrueの1を返す_条件判定
+Dim arr = ArrayCreate(r_fp)
+for i = 0 to Length(arr)-1
+    if search=arr[i] then
+        result=true
+    else
+        continue
+    endif
+next
+fend
+
+function RowSearchArr(r_fp,search,arr[]) //1行ずつsearchを検索し、その前の文字までを配列挿入_配列
+
+	row = GetRow(r_fp)
+	i=1
+	fid=fopen(r_fp,F_READ)
+	resize(arr, row-1)
+	z=LENGTH(arr)-1
+
+	for y = 0 to z
+		str=fget(fid,i)
+		iti=pos(search,str)
+		arr[y]=copy(str,1,iti-1)
+		i=i+1
+	next
+
+	fclose(fid)
+	str=join(arr,"<#CR>",true)
+
+	result=split(str,"<#CR>",true)
+fend
+
+
+procedure RowDelimiterArr2Create(r_fp,Delimiter,var arr1[],var arr2[]) //ファイル内行ごと「：」区切って配列を2つ_配列,dim arr1[-1],arr2[-1]で利用可能
+
+str =Read_ALLText(r_fp)
+
+dim i=0
+
+d=GetRow(r_fp)
+
+fid=fopen(r_fp,F_READ)
+resize(arr1, d - 1)
+resize(arr2, d - 1)
+
+for y = 1 to d
+str=fget(fid,y)
+arr1[i]=token(Delimiter,str)
+arr2[i]=token(Delimiter,str)
+i=i+1
+next
+fclose(fid)
+fend
+
+
+procedure RowDelimiterArr3Create(r_fp,Delimiter,var arr1[],var arr2[],var arr3[]) //ファイル内行ごと：区切って配列を3つ_配列
+dim i=0
+
+// dim arr1,arr2,arr3 //既に定義済み
+// public arr1,arr2,arr3 //ok
+// public arr1[-1],arr2[-1],arr3[-1] //ok
+row=GetRow(r_fp)
+
+fid=fopen(r_fp,F_READ)
+resize(arr1, row - 1)
+resize(arr2, row - 1)
+resize(arr3, row - 1)
+for y = 1 to row
+    row_str=fget(fid,y)
+    arr1[i]=token(Delimiter,row_str)
+    arr2[i]=token(Delimiter,row_str)
+    arr3[i]=token(Delimiter,row_str)
+    i=i+1
+next
+fclose(fid)
+fend
+
+function TwoarrToArr(var arr3[][],var arr1[],var arr2[],row) //2次元配列→1次元配列に作成（2つの配列作成）excel行と列_配列
+// public arr1,arr2
+
+cou=0
+row1=row-1
+
+resize(arr1, row1) //ok
+resize(arr2, row1) //ok
+
+// arr1=safearray(0,gyou1) //ng
+// arr2=safearray(0,gyou1) //ng
+
+for i = 1 to row
+arr1[cou]=arr3[i,1] //[行,列]
+arr2[cou]=arr3[i,2]
+cou=cou+1
+next
+result =true
+fend
+
+
+
+function UBound(arr, d = 1) //Safearrayの上限を得る_配列
+
+def_dll SafeArrayGetUBound(safearray, uint, var long):long:OleAut32
+    result = EMPTY
+    select d
+        case 1
+            result = resize(arr)
+        case 2
+            if SafeArrayGetUBound( arr, d, result) then result = EMPTY
+    selend
+
+fend
+
+function LBound(arr, d = 1) //Safearrayの下限を得る_配列
+def_dll SafeArrayGetLBound(safearray, uint, var long):long:OleAut32.dll
+    result = EMPTY
+    select d
+        case 1
+            result = UBound(arr) - length(arr) + 1
+        case 2
+            if SafeArrayGetLBound( arr, d, result) then result = EMPTY
+    selend
+fend
+
+Procedure	ReverseArray(var a_Ary[]) //配列を逆順_配列
+	Dim i, t, c = Length(a_Ary) - 1
+	For i = 0	To Int(c / 2)
+		t	= a_Ary[c - i]
+		a_Ary[c - i]	= a_Ary[i]
+		a_Ary[i]	= t
+	Next
+FEnd
+
+procedure append(var array[], value) //末尾に値を追加する_配列
+		dim new_index = resize(array, length(array))
+		array[new_index] = value
+fend
+
+FUNCTION append1(var arr[],iti,value) //指定位置に値を追加する_配列
+ RESIZE(arr,LENGTH(arr)-1+1)
+ IF iti<0 or iti>LENGTH(arr)-1
+  arr[LENGTH(arr)-1]=value
+ ELSE
+  FOR i=LENGTH(arr)-1 TO iti step -1
+    IF i=iti
+      arr[i]=value
+    ELSE
+      arr[i]=arr[i-1]
+    ENDIF
+  NEXT
+ ENDIF
+ RESULT=1
+FEND
+
+procedure ArrCopy(arr[], var copyarr[]) //_配列
+		ifb length(arr) > length(copyarr)
+			resize(copyarr, length(arr) - 1)
+		endif
+		for i = 0 to length(arr) - 1
+			copyarr[i] = arr[i]
+		next
+fend
+
+function ArrContain(arr[], value) //値が含まれているかどうか調べる、含まれている：1　含まれていない：0_配列
+    for v in arr
+        ifb v = value
+            result = true
+            exit
+        endif
+    next
+    result = false
+fend
+
+FUNCTION ArrRemove(var arr[],iti) //指定位置の要素を削除_配列
+   IF iti<0 or iti>LENGTH(arr)-1
+            PRINT "無効な要素番号が削除指定されました。"
+            RESULT=0
+   ELSE
+      FOR i=iti TO LENGTH(arr)-1-1
+            arr[i]=arr[i+1]
+      NEXT
+            RESIZE(arr,LENGTH(arr)-1-1)
+            RESULT=1
+   ENDIF
+FEND
+
+function ArrStrDel(arr[],str_del) //指定した配列の要素内から指定の文字列を削除
+
+num1=LENGTH(arr)-1
+
+arr1=safearray(0,num1)
+cou=0
+for i in arr
+arr1[cou]=chgmoj(i, str_del,"")
+cou=cou+1
+next
+result=arr1
+fend
+
+function ArrEqual(arr1[], arr2[]) //2つの配列が等しいかどうか調べる2つの配列が等しいのは要素数が同じで、すべての要素が順序通り同じであるときのみ_配列
+		ifb length(arr1) <> length(arr2)
+			result = false
+			exit
+		endif
+		for i = 0 to length(arr1) - 1
+			ifb arr1[i] <> arr2[i]
+				result = false
+				exit
+			endif
+		next
+		result = true
+fend
+
+function ArrBlankAddStr(str,add) //各配列で空欄を指定文字列埋めて、新配列を作成_配列
+delimiter="<#CR>"
+arr=split(str, delimiter)
+
+len=Length(arr)-1
+
+arr1=safearray(0, len)
+
+for y = 0 to len
+arr1[y]=arr[y]
+    if arr[y]="" then
+    arr1[y]=add
+    endif
+next
+result = arr1
+fend
+
+
+
+//連想配列
+procedure Where(var arr[], expression) //配列やリストの指定した条件を満たす要素のみを取得出来る_配列
+    Filter(arr, expression)
+fend
+
+procedure Select(var arr[], expression) //条件に合う要素を探して集め、ブロック引数itemに要素を入れながらブロックを繰り返し、ブロックの戻り値が真になったときの要素を集め、新しい配列にして返す_配列
+    Map(arr, expression)
+fend
+
+//------------------ファイル操作
+
+Function	Read_Alltext(r_fp) //テキストを全て読込_ファイル操作
+	Dim fid	= FOpen(r_fp)
+	Result	= FGet(fid, F_ALLTEXT)
+	FClose(fid)
+FEnd
+
+
+Procedure	WriteAlltext(w_fp,str) //テキストを全て書込(上書き)_ファイル操作
+	fid = FOpen(w_fp, F_READ or F_WRITE8 or F_NOCR)
+	FPut(fid, str, F_ALLTEXT)
+	FClose(fid)
+FEnd
+
+Procedure	Write_Alltext1(w_fp,str) //テキストを全て書込(追加)_ファイル操作
+	Dim fid	= FOpen(w_fp, F_READ or F_WRITE8 or F_NOCR)
+	FPut(fid, str)
+	FClose(fid)
+FEnd
+
+Function GetRow(r_fp) //ファイルの行数取得_パス_ファイル操作
+	fid=fopen(r_fp,F_READ)
+	row_total_number=fget(fid,-1)
+	Result=row_total_number
+	fclose(fid)
+Fend
+
+Function　　GetRow1(str) //テキストの行数を取得
+　　Dim o_re = CreateOLEObj("VBScript.Regexp")
+　　o_re.Global = TRUE
+　　o_re.pattern = "\n"
+　　v_col = o_re.Execute(str)
+　　If　　v_col.Count = 0　　Then Result　　= 1　　Else Result　　= v_col.Count + 1
+FEnd
+
+Function	GetRowStr(str, a_LineNum) //テキストブロックから指定行を取得_情報取得
+		str	= "<#CR>" + str + "<#CR>"
+		t_Start	= Pos("<#CR>", str, a_LineNum)
+		t_End	= Pos("<#CR>", str, a_LineNum + 1)
+		Result	= Trim(Copy(str, t_Start, t_End - t_Start))
+FEnd
+
+
+Function fn_kinsi(s_Title) //ファイル名禁止文字変換_文字列加工
+	Dim UselessChar_Befor[] =  "*","?","<#dbl>","<",">","|"," ","/","　","｜",":"
+	Dim UselessChar_After[] = "","","","","","","","","","",""
+	Dim i
+	For i = 0 To Length(UselessChar_Befor) - 1
+		s_Title = Replace(s_Title, UselessChar_Befor[i], UselessChar_After[i])
+	Next
+	Result = s_Title
+FEnd
+
+
+Function Get_Row2(str)	//記事アップロード時の2行目が空白かどうかでタイトル入力するか判定_ファイル操作
+	r_fp="C:\Users\user\Desktop\Verification\dummy\index.html"
+	fid=fopen(r_fp,F_WRITE8 or F_NOCR)
+	fput(fid,str)
+	fclose(fid)
+	fid1=fopen(r_fp,F_read)
+	gyou=fget(fid1,-1)
+	str=fget(fid1,2)
+	Result=str
+	fclose(fid)
+Fend
+
+
+procedure File_integration(r_arr[],w_fp) //ファイル統合し、新ファイル作成_ファイル操作
+	dim utuwa
+	for i in r_arr
+		utuwa=utuwa+Read_ALLText(i)
+	next
+	WriteAlltext(w_fp,utuwa)
+fend
+
+procedure Folder_Infile_Open(dp) //フォルダー内ファイルを一気開く_ファイル操作
+getdir(dp)
+
+for i = LENGTH(GETDIR_FILES)-1 to 0 step-1
+r_fp=dp+"\"+GETDIR_FILES[i]
+
+dim cmd[] = "start",r_fp
+doscmd(join(cmd))
+next
+fend
+
+
+//ファイル内容読み書き
+function Fget_Hai_Slct(r_fp) //ファイル内容_配列作成_slctbox
+	fid=fopen(r_fp, F_READ or F_WRITE)
+	str=fget(fid,F_ALLTEXT)
+	hai=split(str,"<#CR>")
+	SLCT=SLCTBOX(SLCT_BTN OR SLCT_STR,0,"",hai)
+	result = SLCT
+	fclose(fid)
+fend
+
+
+function Add_Even_Arr(r_fp,even=1) //奇数、偶数配列要素取得
+	i=0
+	arr=ArrayCreate(r_fp)
+	len=LENGTH(arr)
+	arr1=SafeArray(0,len)
+
+    FOR　y　=　even　TO　len-1 step 2 //偶数取得成功
+    // FOR　y　=　0　TO　len-1 step 2 //奇数取得成功
+    arr1[i]=arr[y]
+    i=i+1
+next
+
+result=arr1
+fend
+
+procedure Printdp_Filecopy() //印刷フォルダーにコピー分のファイル作成_ファイル操作
+	dp="C:\Users\user\Documents\印刷\"
+	r_fp=getstr(0)
+	dim cmd[] = "xcopy",r_fp,dp
+	doscmd(join(cmd))
+fend
+
+function Select_Dp_File_Create(dp,arr[],str) //dpの指定ディレクトリにファイル作成、配列要素がファイル名、strをテキスト書込_ファイル操作
+for i = 0 to LENGTH(arr)-1
+	fn=arr[i]
+	w_fp=dp+fn+".html"
+	TRY
+		COMMON.WriteAlltext(w_fp,str)
+	EXCEPT
+		sendstr(0, TRY_ERRMSG+"<#CR>"+TRY_ERRLINE)
+	ENDTRY
+next
+result =0
+fend
+
+//------------------マウス関係
+Procedure OK_Button(btn_name="OK",click=false) //msgboxのボタンにマウスをあわせる、btn_nameは大文字小文字区別しない_マウス関係
+　　wid = GETID(,"TUmsgDlg_uwsc",-1)//class名で指定
+　　CLKITEM(wid, btn_name, CLK_BTN or CLK_MUSMOVE,click)// クリックはしない
+Fend
+
+procedure Slct_Titlebar_Click() //slctBoxタイトルバークリック_マウス関係
+　id = GETID("UWSC - " + Get_UWSC_Name, "TUslctBox_uwsc",-1)
+　x = status(id, ST_x) + status(id, ST_WIDTH) / 2
+　y = status(id, ST_Y)
+　btn(LEFT, CLICK, x, y)
+fend
+
+procedure SlctBatuClickAlt() //altキーでslctの「x」をクリック_マウス関係
+while TRUE
+	if getkeystate(VK_alt) then
+	　id = GETID("UWSC - " + Get_UWSC_Name, "TUslctBox_uwsc",-1)
+	　x = status(id, ST_x) + status(id, ST_WIDTH)-20
+	　y = status(id, ST_Y)+10
+	　btn(LEFT, CLICK, x, y)
+	endif
+wend
+fend
+
+procedure Slct_Batu_Musmove() //slctの「x」にマウス移動_マウス関係
+id = GETID("UWSC - " + Get_UWSC_Name, "TUslctBox_uwsc",-1)
+x = status(id, ST_x) + status(id, ST_WIDTH)-20
+y = status(id, ST_Y)+10
+mmv(x, y)
+fend
+
+
+
+//------------------情報取得
+Function	Get_dp_fn(r_fp,Parent = 0,ext = TRUE) //親フォルダーフォルダー取得切替ファイル名拡張子取得切り替え_情報取得
+	Dim ptn_ext	; If	ext	Then ptn_ext = ""	Else ptn_ext = "|\.[^\.]*?$"
+	Result	= RegReplace(r_fp, "^.*\\(([^\t\r\n]+?\\){" + Parent + "}[^\t\r\n]+?)(?=\\$|$" + ptn_ext + ").*?$", "$1")
+FEnd
+
+
+Function	Get_Extension(r_fp) //拡張子取得_情報取得
+	Result	= RegReplace(r_fp, "^[^\r\n]+?(?=\.[^\.]+?$|$)", "")
+FEnd
+
+
+Function	Get_Extension1(r_fp) //拡張子を取得_情報取得
+	DEF_DLL	PathFindExtensionA(String) :String :ShlwApi.DLL
+	Result	= PathFindExtensionA(r_fp)
+FEnd
+
+Function Get_Dir_Path(r_fp) //フルパスから一番後ろの\までのパスを取得(\は取得しない)
+	PathRemoveFileSpecA(r_fp)
+	Result = r_fp
+	DEF_DLL PathRemoveFileSpecA(var String) :BOOL :ShlwApi.DLL	// バッファを使用する API
+FEnd
+
+
+//セット1
+Function	Get_Path(a_CheckPath, a_Level, a_Direction = TRUE)	//指定パスから指定階層のディレクトリ(ファイル)名を取得_情報取得
+
+	// a_Direction 取得方向（TRUE: 絶対パス  FALSE: 相対パス）
+	Dim t_Path, t_Start, t_End
+	Dim t_RootPath	= Add_Backslash(Get_RootPath(a_CheckPath))	// c:\	// \\192.168.1.1\***\
+	Ifb 	a_Direction
+		Ifb 	a_Level = 1
+			Result	= t_RootPath
+		Else
+			t_Path	= Add_Backslash(RePlace(a_CheckPath, t_RootPath, ""))
+			t_End	= Pos("\", t_Path, a_Level - 1)
+			Result	= t_RootPath + Copy(t_Path, 1, t_End)
+		EndIf
+	Else
+		a_CheckPath	= Del_Backslash(a_CheckPath)
+		Ifb 	a_Level = -1
+			Result	= RePlace(a_CheckPath, t_RootPath, "")
+		Else
+			t_Path	= "\" + RePlace(a_CheckPath, t_RootPath, "")
+			t_End	= Pos("\", t_Path, - a_Level)
+			Result	= Copy(t_Path, t_End + 1)
+		EndIf
+	EndIf
+FEnd
+
+Function	Get_RootPath(a_Str) //フルパスから ルートパスを取得_情報取得
+
+DEF_DLL	PathStripToRootA(var String) :BOOL :ShlwApi.DLL	//	バッファを使用する API
+
+	PathStripToRootA(a_Str)
+	Result	= a_Str
+
+FEnd
+
+Function	Add_Backslash(a_Path) //フルパスの 末尾にバックスラッシュを追加_文字列加工
+DEF_DLL	PathAddBackslashA(var String) :String :ShlwApi.DLL	//	バッファを使用する API
+
+	a_Path = a_Path + Format(ChrB(0), 1)
+	PathAddBackslashA(a_Path)
+	Result	= a_Path
+FEnd
+
+Function	Del_Backslash(a_Str) //文字列の 末尾のバックスラッシュを削除_文字列加工
+DEF_DLL PathRemoveBackslashA(var String) :String :ShlwApi.DLL	//	バッファを使用する API
+
+	PathRemoveBackslashA(a_Str)
+	Result	= a_Str
+FEnd
+
+
+Function	Get_Dn_Name(r_fp, a_Level) //指定パスから指定階層のディレクトリ(ファイル)名を取得_情報取得
+	Dim t_Path, t_Start, t_End
+	Dim t_RootPath	= Add_Backslash(Get_RootPath(r_fp))	// c:\	// \\192.168.1.1\***\
+	Ifb 	a_Level = 1
+		Result	= t_RootPath
+	Else
+		t_Path	= "\" + Add_Backslash(RePlace(r_fp, t_RootPath, ""))
+		t_Start	= Pos("\", t_Path, a_Level - 1) + 1
+		t_End	= Pos("\", t_Path, a_Level)
+		Result	= Copy(t_Path, t_Start, t_End - t_Start)
+	EndIf
+FEnd
+//セット1
+
+
+Function	Get_SearchLine(str, a_SearchStr, a_SearchCount = 1) //テキストブロックから指定文字で検索し、ヒットした行を取得。_情報取得
+		Dim str1	= "<#CR>" + str + "<#CR>"
+		Dim t_TargetPoint	= Pos(a_SearchStr, str1, a_SearchCount)
+		Ifb	t_TargetPoint = 0
+			Result	= ""
+		Else
+			Dim t_Text_Before	= Copy(str1, 1, t_TargetPoint - 1)
+			Dim t_Text_After	= Copy(str1, t_TargetPoint)
+			Dim t_Line_Before	= Copy(t_Text_Before, Pos("<#CR>", t_Text_Before, -1))
+			Dim t_Line_After	= Copy(t_Text_After, 1, Pos("<#CR>", t_Text_After, 1))
+			Result	= Trim(t_Line_Before + t_Line_After)
+		EndIf
+FEnd
+
+
+function GetEnv(name) //環境変数を取得
+    DEF_DLL GetEnvironmentVariableA(string, var string, long ): long: Kernel32.dll
+
+    result = empty
+    len = GetEnvironmentVariableA(""+name,int(0),0)// 必要バッファ長さ
+    if len > 0
+        buf = "                                                                 "//64文字
+        for i=0 to int(power(len,-2))-6
+            buf = buf + buf
+        next
+        len = GetEnvironmentVariableA(""+name,buf,len)
+        result = COPY(buf,0,len)
+    endif
+fend
+
+
+Procedure Get_Title_Content_Rowif(r_fp) //2行目が空行のばあい、1行目タイトル、3行目から最終行まで記事内容として変数挿入_条件判定
+
+dim utuwa
+fid=fopen(r_fp,F_read or F_write8 or F_NOCR)
+
+gyou=fget(fid,-1)
+
+for i = 1 to gyou
+    if i=1 then 
+        title=fget(fid,1)
+    else
+        utuwa=utuwa+fget(fid,i)+"<#CR>"
+    endif
+next
+
+fend
+
+
+//------------------正規表現
+
+Function RegExe(str, Pattern, IgnoreCase=TRUE, Global=TRUE) //Matches基本_正規表現
+Public o_Reg=CREATEOLEOBJ("VBScript.RegExp")
+o_Reg.IgnoreCase=IgnoreCase
+o_Reg.Global=Global
+o_Reg.Pattern=Pattern
+Matches=o_Reg.Execute(str)
+Result=Matches
+Fend
+
+Function RegValue(str, Pattern, IgnoreCase=TRUE, Global=true) //Matches.Item(i).Value(マッチしたもの全てを結果に。)_正規表現
+dim utuwa
+o_Reg=CREATEOLEOBJ("VBScript.RegExp")
+o_Reg.IgnoreCase=IgnoreCase
+o_Reg.Global=Global
+o_Reg.Pattern=Pattern
+o_Reg.Multiline = TRUE
+Matches=o_Reg.Execute(str)
+for i = 0 to Matches.count-1
+utuwa=utuwa+Matches.Item(i).Value
+next
+Result=utuwa
+Fend
+
+Function	RegReplace(str,pat,replacestr= null) //正規表現置き換え、testでパターン有りなしチェック有り、Global=true版_正規表現
+	Dim o_Reg= CreateOLEObj("VBScript.Regexp") 
+    o_Reg.Global = TRUE 
+    o_Reg.Multiline = TRUE 
+    o_Reg.pattern = pat
+	Ifb replacestr = null
+        If  o_Reg.Test(str) = 0 Then
+        Result = FALSE
+        Else
+        Result = TRUE
+		endif
+	Else
+    Result = o_Reg.Replace(str,replacestr)
+	EndIf
+FEnd
+
+Function	RegReplace1(str,pattern,replacestr = null,Global=false) //正規表現置き換えGlobal=false版_正規表現
+Dim o_Reg	= CreateOLEObj("VBScript.Regexp")
+o_Reg.Global = Global
+o_Reg.Multiline = TRUE
+o_Reg.pattern = pattern; 
+Ifb replacestr = null
+    If  o_Reg.Test(str) = 0	Then
+    Result = FALSE
+    Else
+    Result = TRUE
+    endif
+Else			
+Result = o_Reg.Replace(str, replacestr)
+EndIf
+FEnd
+
+Function RegSubmatch(str, Pattern, IgnoreCase=TRUE, Global=true) //サブマッチ基本単独_正規表現
+o_Reg=CREATEOLEOBJ("VBScript.RegExp")
+o_Reg.IgnoreCase=IgnoreCase
+o_Reg.Global=Global
+o_Reg.Pattern=Pattern
+Matches=o_Reg.Execute(str)
+for i = 0 to Matches.count-1
+Result=Matches.Item(i).SubMatches(0)
+next
+Fend
+
+Function RegSubmatch1(str, Pattern, IgnoreCase=TRUE, Global=true) //サブマッチ一致全部取得_正規表現
+    dim utuwa
+    o_Reg=CREATEOLEOBJ("VBScript.RegExp")
+    o_Reg.IgnoreCase=IgnoreCase
+    o_Reg.Global=Global
+    o_Reg.Pattern=Pattern
+    Matches=o_Reg.Execute(str)
+    for i = 0 to Matches.count-1
+        utuwa=utuwa+Matches.Item(i).SubMatches(0)
+    next
+    Result=utuwa
+Fend
+
+
+Function	RegExist(str, pattern) //文字列の存在をチェック_正規表現
+	Dim o_Reg	= CreateOLEObj("VBScript.Regexp")
+	o_Reg.Global    	= TRUE	//	複数結果を取得。
+	o_Reg.IgnoreCase	= TRUE	//	大文字・小文字の区別は無し。
+	o_Reg.Multiline 	= TRUE	//	各行に行頭 ^ と行末 $ を発生させる。
+	o_Reg.pattern   	= pattern
+	If	o_Reg.Test(str) = 0	Then
+	Result	= FALSE
+	Else
+	Result	= TRUE
+	endif
+FEnd
+
+function RegRowArrCreate(str,Pattern) //各行に対して正規表現処理して配列に入れる_正規表現
+
+public arr[-1]
+dim i=0
+w_fp="C:\Users\user\Desktop\Verification\dummy\index.html"
+WriteAlltext(w_fp,str)
+
+fid=fopen(w_fp, F_READ)
+row=fget(fid,-1)
+resize(arr,row)
+for y = 1 to row
+str1=fget(fid,y)
+arr[i]=RegValue(str1, Pattern)
+i=i+1
+next
+
+str1=join(arr,"<#CR>",true)
+result=split(str1,"<#CR>",true)
+fclose(fid)
+fend
+
+
+Function	Show_Result(str,msg=false) //数字と文字列のパターン一致結果を返す、msg有無切替
+	public o_reg	= CreateOLEObj("VBScript.Regexp")
+	o_reg.Global 	= TRUE
+	o_reg.pattern	= "\d+"
+	matches=o_reg.execute(str)
+	Dim i, t_Max = matches.Count
+	dim utuwa,utuwa1
+
+	For i = 1	To t_Max
+		utuwa=utuwa+ (i + "/" + t_Max) + " = " + matches.Item(i - 1).Value + "<#CR>"
+	Next
+
+	public o_reg1	= CreateOLEObj("VBScript.Regexp")
+	o_reg1.Global 	= TRUE
+	o_reg1.pattern	= "\D+"
+	matches1=o_reg1.execute(str)
+	Dim y, t_Max1 = matches1.Count
+
+	For y = 1	To t_Max1
+		utuwa1=utuwa1+ (y + "/" + t_Max1) + " = " + matches1.Item(y - 1).Value + "<#CR>"
+	Next	
+
+	if msg=false then //msg無し
+		total="数字<#CR>"+utuwa+"文字列<#CR>"+utuwa1
+	else //msg有り
+		total=utuwa+utuwa1
+	endif
+
+	Result=total
+
+FEnd
+
+function IETabReg(Pattern) //アクティブIEに対し正規表現でデータ取得_正規表現
+Dim i, ObjShell = CreateOleObj("Shell.Application")
+dim utuwa
+
+For i = 0 To ObjShell.Windows.Count - 1
+	With ObjShell.Windows.Item(i)
+		Try
+			source=.document.body.innerhtml
+			Matches=RegExe(source,Pattern)//スクリプト内で指定（Pattern）
+			utuwa=utuwa+Matches.Item(0).Value+"<#CR>"
+		Except
+		EndTry
+	EndWith
+Next
+result = utuwa
+fend
+
+
+//日付
+function hhnn(num) //小数点付き数字→hh:nn ex)3.5→3:30
+h1=int(num)// 時間
+h1a=num-h1
+
+if h1a>0 then
+h1b=h1a*60
+else
+h1b="00"
+endif
+
+hn=h1+":"+h1b
+result = hn
+fend
+
+
+function PassDate(OldDate) //経過日数取得、OldDate=YYYYMMDD_日付操作
+GetTime()
+Dim SecNew	= GetTime(0, G_TIME_YY4 + "/" + G_TIME_MM2 + "/" + G_TIME_DD2)
+Dim SecOld	= GetTime(0, OldDate)
+Dim SecDif	= SecOld-SecNew
+result =(SecDif / (60*60*24))
+fend
+// $$日付操作
+
+
+//------------------ダウンロード
+
+//ダウンロードセット1
+Procedure Ado_Download(url,dl_pas="",dl_name="",over_w=defalt_over_w)
+	PUBLIC Stream=CreateOLEObj( "ADODB.Stream" )
+	PUBLIC oHttp=CreateOLEObj("MSXML2.XMLHTTP")
+PUBLIC defalt_over_w=false   //上書き初期設定（上書きする:True しない:false）
+sleep(1)
+ifb dl_name=""
+	dl_name=Betweenstr(url,"/",,-1)
+endif
+ifb !(dl_pas="")
+	ifb !(copy(dl_pas,Length(dl_pas))="\")
+		dl_pas=dl_pas+"\"
+	endif
+endif
+dl_pas=dl_pas+dl_name
+oHttp.Open("GET",url,0)
+oHttp.Send
+Get_Stream(oHttp.responseBody,dl_pas,dl_name,over_w)
+Fend
+
+
+Procedure Get_Stream(obj,dl_pas,dl_name,over_w)
+	ifb over_w
+		over_w=2
+	else
+		over_w=1
+	endif
+	Stream.Open
+	Stream.Type=1
+	Stream.Write=obj
+	COM_ERR_IGN
+	Stream.SaveToFile(dl_pas,over_w)   
+	COM_ERR_RET
+	Stream.Close
+Fend
+//ダウンロードセット1
+
+//------------------デバッグ
+
+procedure ArrPrint(arr[]) //配列の中身をlogファイルで確認_配列
+	for i in arr
+		print i
+	next
+fend
+
+procedure ArrClip(hai[]) //すべての配列要素をクリップボードへ_配列
+	dim utuwa
+	for i in hai
+		utuwa=utuwa+i+"<#CR>"
+	next
+	sendstr(0,utuwa)
+fend
+
+
+procedure ArrMsg(arr[]) //配列の中身をmsgboxで表示_配列
+for i = 0 to length(arr)-1
+msgbox(i+"が"+arr[i])
+next
+fend
+
+
+//表
+
+
+procedure TableCreate(area_r_fp,KyuzinNumber_r_fp,w_fp,companyname="") //縦表1_表作成
+
+Dim arr1 = ArrayCreate(area_r_fp)
+Dim arr2 = ArrayCreate(KyuzinNumber_r_fp)
+
+// ここからHTML生成
+html = "<table class=<#DBL>table<#DBL>>"
+
+html = html + "【"+companyname+"地域別経理求人数】<#CR>"+"<tr>"
+html = html + "<#CR>"+"<th>勤務地</th>"
+
+for y = 0 to length(arr1)-1//列のエージェント名4列
+　html = html + "<#CR>" + "<TH>" + arr1[y]+ "</TH>"　//----- 1行目は見出し
+next
+html = html + "<#CR>"+ "</TR>"
+html = html + "<#CR>"+"<TBODY>"
+html = html + "<#CR>"+"<tr>"
+html = html + "<#CR>"+"<td>求人数</td>"
+
+for i = 0 to length(arr2)-1
+　html = html + "<#CR>" +"<TD>" + arr2[i]+ "</TD>"　
+next
+
+html = html + "<#CR>"+"</TR>"
+html = html + "<#CR>"+"</TBODY>"
+html = html + "<#CR>"+"</TABLE>"
+WriteAlltext(w_fp,html)
+fend
+
+
+procedure TableCreateArrRead(r_fp,w_fp,companyname="") //縦表2_表作成
+
+dim i=0
+row=GetRow(r_fp)
+
+fid=fopen(r_fp,F_READ)
+
+arr1=SafeArray(0,row)
+arr2=SafeArray(0,row)
+
+for y = 1 to row
+str=fget(fid,y)
+arr1[i]=token(":",str) //見出し
+arr2[i]=token(":",str) //求人数
+i=i+1
+next
+fclose(fid)
+
+html = "<table class=<#DBL>table<#DBL>>"
+
+html = html + "【"+companyname+"地域別経理求人数】<#CR>"+"<tr>"
+html = html + "<#CR>"+"<thead>"
+html = html + "<#CR>"+"<tr>"
+html = html + "<#CR>"+"<th>勤務地</th>"
+
+for z = 0 to row-1//列のエージェント名4列
+　html = html + "<#CR>"+"<TH>" + arr1[z]+ "</TH>"　//----- 1行目は見出し
+next
+html = html + "<#CR>"+"</TR>"
+html = html + "<#CR>"+"<TBODY>"
+html = html + "<#CR>"+"<tr>"
+html = html + "<#CR>"+"</thead>"
+html = html + "<#CR>"+"<td>求人数</td>"
+
+
+for x = 0 to row-1
+　html = html + "<#CR>"+"<TD>"+arr2[x]+ "</TD>"　
+next
+
+html = html + "<#CR>"+"</TR>"
+html = html + "<#CR>"+"</TBODY>"
+html = html + "<#CR>"+"</TABLE>"
+WriteAlltext(w_fp,html)
+fend
+
+
+procedure TableCreateArrReadUpdata(r_fp,w_fp,title="") //縦表 表タイトル_表作成
+
+GETTIME()
+time =G_TIME_yy2+"/"+G_TIME_mm2+"/"+G_TIME_dd2
+hiduke="更新日:"+time
+
+dim i=0
+row=getrow(r_fp)
+row1=row-1
+fid=fopen(r_fp,F_READ)
+
+arr1=SafeArray(0,row1)
+arr2=SafeArray(0,row1)
+
+for y = 1 to row
+    str=fget(fid,y)
+    arr1[i]=token(":",str)
+    arr2[i]=token(":",str)
+    i=i+1
+next
+resize(arr1,row1)
+resize(arr2,row1)
+fclose(fid)
+
+// ここからHTML生成
+html = "<table class=<#DBL>table<#DBL>>"
+html = html + "<#CR>"+hiduke+title
+// html = html + "<#CR>" + "<caption>"+hiduke+title+"</caption>"
+html = html + "<#CR>"+"<thead>"
+html = html + "<#CR>"+"<tr>"
+html = html + "<#CR>"+"<th></th><#CR><th></th>"
+html = html + "<#CR>"+ "</tr>"
+html = html + "<#CR>"+"</thead>"
+html = html + "<#CR>"+"<tbody>"
+for i = 0 to row-1
+  html = html + "<#CR>"+"<tr>"
+　html = html + "<#CR>"+"<td>"+arr1[i]+"</td>"　
+　html = html + "<#CR>"+"<td>"+arr2[i]+"</td>"　
+　html = html + "<#CR>"+"</tr>"
+next
+
+html = html + "<#CR>"+"</tbody>"
+html = html + "<#CR>"+"</table>"
+html =chgmoj(html,"<#CR>","")
+WriteAlltext(w_fp,html)
+fend
+
+procedure VerticalTableCreateArrReadTitle2(r_fp,w_fp,title1,title2) //縦表、タイトル1、タイトル2_表作成
+GETTIME()
+time =G_TIME_yy2+"/"+G_TIME_mm2+"/"+G_TIME_dd2
+hiduke="【更新日:"+time+"】"
+
+dim i=0
+row=getrow(r_fp)
+fid=fopen(r_fp,F_READ)
+row1=row-1
+arr1=SafeArray(0,row1)
+arr2=SafeArray(0,row1)
+
+for y = 1 to row
+    str=fget(fid,y)
+    arr1[i]=token(":",str)
+    arr2[i]=token(":",str)
+    i=i+1
+next
+
+resize(arr1,row1)
+resize(arr2,row1)
+fclose(fid)
+
+// ここからHTML生成
+html = "<table class=<#DBL>table<#DBL>>"
+html = html + "<#CR>"+"<thead>"
+html = html + "<#CR>"+"<tr>"
+html = html + "<#CR>"+"<th>"+title1+"</th><#CR><th>"+title2+"</th>"
+html = html + "<#CR>"+ "</tr>"
+html = html + "<#CR>"+"</thead>"
+html = html + "<#CR>"+"<tbody>"
+for i = 0 to row-1
+  html = html + "<#CR>"+"<tr>"
+　html = html + "<#CR>"+"<td>"+arr1[i]+"</td>"　
+　html = html + "<#CR>"+"<td>"+arr2[i]+"</td>"　
+　html = html + "<#CR>"+"</tr>"
+next
+
+html = html + "<#CR>"+"</tbody>"
+html = html + "<#CR>"+"</table>"
+html =chgmoj(html,"<#CR>","")
+WriteALLText(w_fp,html)
+fend
+
+function SideTableCreate(w_fp,var arr1[],var arr2[],updata,title1="",title2="") //横 th有り_表作成
+html = "<#CR><table class=<#DBL>table<#DBL>>"
+html = html + "<#CR>"+"<caption>"+updata+"</caption>"
+html = html + "<#CR>"+"<thead>"
+html = html + "<#CR>"+"<tr>"
+
+html = html + "<#CR>"+"<th>"+title1+"</th>"　
+for i = 0 to LENGTH(arr1)-1
+　html = html + "<#CR>"+"<td>"+arr1[i]+"</td>"　
+next
+　html = html + "<#CR>"+"</tr>"
+html = html + "<#CR>"+"</thead>"
+html = html + "<#CR>"+"<tr>"
+
+html = html + "<#CR>"+"<th>"+title2+"</th>"　
+for i = 0 to LENGTH(arr2)-1
+　html = html + "<#CR>"+"<td>"+arr2[i]+"</td>"　
+next
+　html = html + "<#CR>"+"</tr>"
+html = html + "<#CR>"+"</table>"
+html =chgmoj(html,"<#CR>","")
+result = html
+WriteALLText(w_fp,html)
+fend
+
+//------------------表示関係
+
+function fuk_alt(var msg[]) //altを押すごとに次の吹き出しを表示させる_表示関係
+    x=1000
+    y=0
+    direction=0
+    fontsize=14
+
+    For i = 0 To LENGTH(msg)-1
+        FUKIDASI(msg[i],x,y,direction,fontsize,,)
+        while TRUE
+        sleep(0.1)
+        if getkeystate(VK_alt) then
+        break
+        endif
+        wend
+        FUKIDASI()
+    Next
+
+    result = 0
+fend
+
+FUNCTION fuk(txt,color=3,fontsize="") //吹き出し指定色でメッセージ表示_表示関係
+    SELECT color
+    CASE 1 //文字色:白、背景:青
+        FUKIDASI(txt,0,50,0,fontsize,,$FFFFFF,$CC0000)
+    CASE 2 //文字色:白、背景:緑
+        FUKIDASI(txt,0,50,0,fontsize,,$FFFFFF,$008800)
+    CASE 3 //文字色:黒、背景:黄色
+        FUKIDASI(txt,0,50,0,fontsize)
+    CASE 4 //文字色:白、背景:黒
+        FUKIDASI(txt,0,50,0,fontsize,,$FFFFFF,$555555)
+    SELEND
+    sleep(3)
+    FUKIDASI()//吹き出し消去
+    RESULT=1
+FEND
+
+
+endclass
