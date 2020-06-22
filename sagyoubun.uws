@@ -1907,5 +1907,5 @@ FUNCTION fuk(txt,color=3,fontsize="") //吹き出し指定色でメッセージ�
     RESULT=1
 FEND
 
-
+aaa
 endclass
