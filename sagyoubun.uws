@@ -1,4 +1,4 @@
-//------------------com関係
+﻿//------------------com関係
 //------------------ウィンドウ関係
 //------------------エクセル関係
 //------------------キー処理
@@ -659,26 +659,6 @@ endif
 result = utuwa
 fend
 
-
-function SlcKeyAllocation(type, timeout, msg, item[]) //キー割り当て2_キー処理
-//type:SLCT_BTN,SLCT_CHK,SLCT_RDO
-
-　const slct_order = "asdfjkl;gh:qweruiopzxcvnm,.tyb@"
-　　i = 0
-
-　　for l in slct_order
-	　　　item[i] = item[i] + " (&" + l + ")"
-	　　　i = i + 1
-
-　　　if i >= length(item) then //配列要素数を上限として繰り返し
-	　　　　break
-　　　endif
-　　next
-　　result = global.slctbox(type, timeout, msg, item)
-　　result = slctbox(type, timeout, msg, item) //こちらも同じ結果になる
-fend
-
-
 //------------------コマンド
 procedure Cmd(hai[]) //コマンド引数_コマンド
 	a=join(hai)
@@ -1247,6 +1227,7 @@ result =0
 fend
 
 //------------------マウス関係
+
 Procedure OK_Button(btn_name="OK",click=false) //msgboxのボタンにマウスをあわせる、btn_nameは大文字小文字区別しない_マウス関係
 　　wid = GETID(,"TUmsgDlg_uwsc",-1)//class名で指定
 　　CLKITEM(wid, btn_name, CLK_BTN or CLK_MUSMOVE,click)// クリックはしない
@@ -1871,6 +1852,41 @@ fend
 
 //------------------表示関係
 
+function SlctKeyAllocation(type, timeout, msg, item[]) //キー割り当て2_キー処理
+//type:SLCT_BTN,SLCT_CHK,SLCT_RDO
+
+　const slct_order = "asdfjkl;gh:qweruiopzxcvnm,.tyb@"
+　　i = 0
+
+　　for l in slct_order
+    　　　item[i] = item[i] + " (&" + l + ")"
+    　　　i = i + 1
+
+　　　if i >= length(item) then //配列要素数を上限として繰り返し
+    　　　　break
+　　　endif
+　　next
+　　result = global.slctbox(type, timeout, msg, item)
+// 　　result = slctbox(type, timeout, msg, item) //こちらも同じ結果になる
+fend
+
+FUNCTION fuk(txt,color=3,fontsize="") //吹き出し指定色でメッセージ表示_表示関係
+    SELECT color
+    CASE 1 //文字色:白、背景:青
+        FUKIDASI(txt,0,50,0,fontsize,,$FFFFFF,$CC0000)
+    CASE 2 //文字色:白、背景:緑
+        FUKIDASI(txt,0,50,0,fontsize,,$FFFFFF,$008800)
+    CASE 3 //文字色:黒、背景:黄色
+        FUKIDASI(txt,0,50,0,fontsize)
+    CASE 4 //文字色:白、背景:黒
+        FUKIDASI(txt,0,50,0,fontsize,,$FFFFFF,$555555)
+    SELEND
+    sleep(3)
+    FUKIDASI()//吹き出し消去
+    RESULT=1
+FEND
+
+
 function fuk_alt(var msg[]) //altを押すごとに次の吹き出しを表示させる_表示関係
     x=1000
     y=0
@@ -1891,23 +1907,6 @@ function fuk_alt(var msg[]) //altを押すごとに次の吹き出しを表示�
     result = 0
 fend
 
-FUNCTION fuk(txt,color=3,fontsize="") //吹き出し指定色でメッセージ表示_表示関係
-    SELECT color
-    CASE 1 //文字色:白、背景:青
-        FUKIDASI(txt,0,50,0,fontsize,,$FFFFFF,$CC0000)
-    CASE 2 //文字色:白、背景:緑
-        FUKIDASI(txt,0,50,0,fontsize,,$FFFFFF,$008800)
-    CASE 3 //文字色:黒、背景:黄色
-        FUKIDASI(txt,0,50,0,fontsize)
-    CASE 4 //文字色:白、背景:黒
-        FUKIDASI(txt,0,50,0,fontsize,,$FFFFFF,$555555)
-    SELEND
-    sleep(3)
-    FUKIDASI()//吹き出し消去
-    RESULT=1
-FEND
-
-
 Procedure	Th_InputIME() //日本語入力に切替_表示関係
 	MouseOrg(Get_InputHND())
 		If	! GetKeyState(TGL_IME)	Then KBD(VK_KANJI)// 日本語入力に変更
@@ -1919,6 +1918,23 @@ Function	Get_InputHND(a_Title = "") //入力履歴の管理。表示選択付。
 	Result	= IDtoHND(GetID(a_Title, "TFInpBox.UnicodeClass", 3))
 FEnd
 
+function DuplicateDelete(r_fp) //重複行削除__文字列加工
 
+HASHTBL hash = HASH_CASECARE // ●HASH_SORT はデフォでTrue ?
+
+fp=fopen(r_fp,F_READ)
+for i=1 to fget(fp,-1)
+    hash[fget(fp,i)]=1 // 1 はダミー
+next
+fclose(fp)
+
+dim utuwa
+
+for i=0 to length(hash)-1
+utuwa=utuwa+hash[i, HASH_KEY]+"<#CR>"
+next
+result=utuwa
+fclose(fp)
+fend
 
 endclass
