@@ -621,3 +621,154 @@ ENDIF
 RESULT=1
 FEND
 
+
+procedure sort(w_fp,str) //ソートデータファイル書込_文字列加工
+
+fid=fopen(w_fp,F_WRITE8 or F_NOCR)
+// 連想配列の宣言
+HASHTBL data = HASH_SORT
+
+// データを配列に
+dim array_1[50]
+i = 1
+repeat
+　wks = betweenstr("<#CR>" + str + "<#CR>" , "<#CR>" , "<#CR>" , i , true)
+　if wks <> ""
+　　// 地域名
+　　area = betweenstr(wks ,, ":")
+　　// 数量
+　　value = betweenstr(wks , ":" ,)
+　　// 数量を前方ゼロ埋めして10桁揃え
+　　value = format("0", 10 - length(value)) + value
+
+　　// 数量と地域を連結して連想配列に　※値の1はダミーなので何でも良い
+　　data[value + area] = 1
+　　i = i + 1
+　endif
+until wks = ""
+
+for i = (length(data) - 1) to 0 step -1
+　// 地域名
+　area = copy(data[i , HASH_KEY ] , 11)
+　// 数量
+　value = copy(data[i , HASH_KEY ] , 1 , 10 )
+　// 数量が文字型なので数値型に
+　value = val(value)
+　// 出力
+fput(fid,area + ":" + value)
+next
+fclose(fid)
+Fend
+
+
+function sort1(str) //ソートデータ取得_文字列加工
+dim a
+// 連想配列の宣言
+HASHTBL data = HASH_SORT
+
+// データを配列に
+dim array_1[50]
+i = 1
+repeat
+　wks = betweenstr("<#CR>" + str + "<#CR>" , "<#CR>" , "<#CR>" , i , true)
+　if wks <> ""
+　　// 地域名
+　　area = betweenstr(wks ,, ":")
+　　// 数量
+　　value = betweenstr(wks , ":" ,)
+　　// 数量を前方ゼロ埋めして10桁揃え
+　　value = format("0", 10 - length(value)) + value
+
+　　// 数量と地域を連結して連想配列に　※値の1はダミーなので何でも良い
+　　data[value + area] = 1
+　　i = i + 1
+　endif
+until wks = ""
+
+for i = (length(data) - 1) to 0 step -1
+　// 地域名
+　area = copy(data[i , HASH_KEY ] , 11)
+　// 数量
+　value = copy(data[i , HASH_KEY ] , 1 , 10 )
+　// 数量が文字型なので数値型に
+　value = val(value)
+　// 出力
+a=a+area + ":" + value+"<#CR>"
+next
+result=a
+Fend
+
+
+procedure sort2(w_fp,str) //ソートデータ取得2_文字列加工
+
+fid=fopen(w_fp,F_WRITE8 or F_NOCR)
+// 連想配列の宣言
+HASHTBL data = HASH_SORT
+
+// データを配列に
+dim array_1[70]
+i = 1
+repeat
+　wks = betweenstr("<#CR>" + str + "<#CR>" , "<#CR>" , "<#CR>" , i , true)
+　if wks <> ""
+　　// 地域名
+　　area = betweenstr(wks ,, ":")
+　　// 数量
+　　value = betweenstr(wks , ":" ,)
+　　// 数量を前方ゼロ埋めして10桁揃え
+　　value = format("0", 10 - length(value)) + value
+
+　　// 数量と地域を連結して連想配列に　※値の1はダミーなので何でも良い
+　　data[value + area] = 1
+　　i = i + 1
+　endif
+until wks = ""
+
+for i = (length(data) - 1) to 0 step -1
+　// 地域名
+　area = copy(data[i , HASH_KEY ] , 11)
+　// 数量
+　value = copy(data[i , HASH_KEY ] , 1 , 10 )
+　// 数量が文字型なので数値型に
+　value = val(value)
+　// 出力
+fput(fid,area + ":" + value)
+next
+fclose(fid)
+Fend
+
+
+Function FF(a_Str, a_FormatChar, a_FormatWidth, a_f_Byte = False) //表示幅文字埋め 前方 Format_文字列加工
+　　　　Dim t_Length
+　　　　If a_f_Byte Then t_Length = Lengthb(a_Str) Else t_Length = Length(a_Str)
+　　　　Dim t_Width = a_FormatWidth - t_Length
+　　　　If t_Width > 0 Then a_Str = Format(a_FormatChar, t_Width) + a_Str
+　　　　Result = a_Str
+FEnd
+
+
+Function FR(a_Str, a_FormatChar, a_FormatWidth, a_f_Byte = False) //表示幅文字埋め 後方 Format_文字列加工
+　　　　Dim t_Length
+　　　　If a_f_Byte Then t_Length = Lengthb(a_Str) Else t_Length = Length(a_Str)
+　　　　Dim t_Width = a_FormatWidth - t_Length
+　　　　If t_Width > 0 Then a_Str = a_Str + Format(a_FormatChar, t_Width)
+　　　　Result = a_Str
+FEnd
+
+
+Function FM(a_Str, a_FormatChar, a_FormatWidth, a_f_Byte = False) //表示幅文字埋め 中間(前後) Format_文字列加工
+　　　　Dim t_Length
+　　　　If a_f_Byte Then t_Length = Lengthb(a_Str) Else t_Length = Length(a_Str)
+　　　　Dim t_Width = a_FormatWidth - t_Length
+　　　　Ifb t_Width > 0
+　　　　　　t_Width = t_Width / 2
+　　　　　　Dim t_Front = Format(a_FormatChar,  Int(t_Width))
+　　　　　　Dim t_Rear  = Format(a_FormatChar, Ceil(t_Width))
+　　　　　　a_Str = t_Front + a_Str + t_Rear
+　　　　EndIf
+　　　　Result = a_Str
+FEnd
+
+function match(s1, s2)　　//共通文字列取得_文字列加工
+　　if pos(s1, s2) = 1 or s1 ="" then result = s1 else result = match(copy(s1, 1, length(s1)-1), s2)
+fend

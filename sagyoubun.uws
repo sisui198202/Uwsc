@@ -1107,7 +1107,7 @@ Procedure	WriteAlltext(w_fp,str) //テキストを全て書込(上書き)_ファ
 	FClose(fid)
 FEnd
 
-Procedure	Write_Alltext1(w_fp,str) //テキストを全て書込(追加)_ファイル操作
+Procedure	WriteAlltext1(w_fp,str) //テキストを全て書込(追加)_ファイル操作
 	Dim fid	= FOpen(w_fp, F_READ or F_WRITE8 or F_NOCR)
 	FPut(fid, str)
 	FClose(fid)
@@ -1935,6 +1935,156 @@ utuwa=utuwa+hash[i, HASH_KEY]+"<#CR>"
 next
 result=utuwa
 fclose(fp)
+fend
+
+
+function DuplicateDelete1(str) //重複行削除__文字列加工
+
+HASHTBL hash = HASH_CASECARE
+
+w_fp="C:\Users\user\Desktop\Verification\abc.txt"
+COMMON.WriteAllText(w_fp,str)
+
+
+fid=fopen(w_fp,F_READ)
+for i=1 to fget(fid,-1)
+    hash[fget(fid,i)]=1 // 1 はダミー
+next
+fclose(fid)
+
+dim utuwa
+
+for i=0 to length(hash)-1
+utuwa=utuwa+hash[i, HASH_KEY]+"<#CR>"
+next
+result=utuwa
+fclose(fid)
+fend
+
+
+Function FnBan(fn) //ファイル名禁止文字変換_文字列加工
+	Dim UselessChar_Befor[] =  "*","?","<#dbl>","<",">","|"," ","/","　","｜",":"
+	Dim UselessChar_After[] = "","","","","","","","","","",""
+	Dim i
+	For i = 0 To Length(UselessChar_Befor) - 1
+		fn = Replace(fn, UselessChar_Befor[i], UselessChar_After[i])
+	Next
+	Result = fn
+FEnd
+
+
+function BlankRowDelete(r_fp) //空行削除文字列加工_文字列加工
+str=Read_Alltext(r_fp)
+
+pattern="^(\s|　)*(\r\n|\r|\n)"
+RESULT = RegReplace(str,pattern,"")
+fend
+
+function BlankRowDelete1(str) //空行削除文字列加工_文字列加工
+pattern="^(\s|　)*(\r\n|\r|\n)"
+RESULT = RegReplace(str,pattern,"")
+fend
+
+
+Function　　ThousandSeparate(str_num) //数字3桁区切りにする_文字列加工
+　　Dim o_RE　　 = CreateOLEObj("VBScript.Regexp")
+　　o_RE.pattern = "^(-?\d+)(\d{3})" // マイナス値も対応
+　　Repeat
+　　　　Result　= str_num
+　　　　str_num 　= o_RE.Replace(str_num, "$1,$2")
+　　Until　　Result = str_num
+FEnd
+
+
+function randomtext(len, l_alp = true, s_alp = true, num = true) //ランダムテキスト生成_文字列加工
+    c = ""
+    if l_alp then c = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + c
+    if s_alp then c = "abcdefghijklmnopqrstuvwxyz" + c
+    if num   then c = "0123456789" + c
+
+    s = ""
+    for i=1 to len
+        s = s + copy(c, random(length(c)), 1)
+    next
+
+    result = s
+
+// len：生成する文字の数
+// l_alp：大文字の英字を含むか（true：含む,false：含まない）
+// s_alp：小文字の英字を含むか（true：含む,false：含まない）
+// num：数字を含むか（true：含む,false：含まない）
+
+fend
+
+function RowEndAddCr2(r_fp) //各行の後ろに改行を2ついれる_文字列加工
+dim utuwa
+Dim arr =ArrayCreate(r_fp)
+for i = 0 to Length(arr)-1
+utuwa=utuwa+arr[i]+"<#CR><#CR>"
+next
+result =utuwa
+fend
+
+FUNCTION translate(str, async=FALSE, method="GET") //日本語から英訳_文字列加工
+    CONST DEF_URL = "https://translate.googleapis.com/translate_a/single?"
+    CONST JA_EN_PARAM = "client=gtx&sl=ja&tl=en&dt=t&q="
+
+    DIM sc
+
+        sc = CREATEOLEOBJ("ScriptControl")
+        sc.Language = "JScript"
+        sc.ExecuteStatement("Array.prototype.Get = function(i) { return this[i]; }")
+
+        DIM http = CREATEOLEOBJ("MSXML2.XMLhttp")
+        http.open(method, DEF_URL + JA_EN_PARAM + ENCODE(ENCODE(str, CODE_UTF8), CODE_URL), FALSE)
+        http.send()
+        RESULT = http.statusText
+        IFB http.status = 200 THEN
+            // JSONをEvalしちゃうのは非推奨
+            DIM res = sc.Eval(http.responseText)
+            RESULT = res.Get(0).Get(0).Get(0)
+        ENDIF
+ FEND
+
+//------------------変数
+const img_def="C:\Users\user\Desktop\img\"
+
+const img_thu="C:\Users\user\Desktop\img\Thumbnail\"
+
+const img_kizi="C:\Users\user\Desktop\img\kizi\"
+
+const img_size="C:\Users\user\Desktop\img\Sizeadjustment"
+
+//------------------連想配列
+Function	HashPop(num, hash[]) //指定番号のvalueを表示させ、そのkeyを取得する_連想配列
+	HashTbl	h_MenuT
+	Dim i, arr = Split(num, ",")
+	For i = 0	To Length(arr) - 1
+		h_MenuT[hash[arr[i], HASH_KEY]]	= hash[arr[i], HASH_VAL]
+	Next
+
+	Dim Re	= PopupMenu(h_MenuT)
+	If  Re > -1	Then Result	= h_MenuT[Re, HASH_KEY]
+FEnd
+
+function GetkeyArr(r_fp,separate) //連想配列1_連想配列
+hashtbl hash
+
+arr =ArrayCreate(r_fp)
+
+for i in arr
+b_1=token(separate, i)
+hash[b_1]=i
+next
+
+dim len=LENGTH(hash)-1,c[len],d[len]
+
+for y = 0 to len
+c[y]=hash[y,hash_key]
+d[y]=hash[y,hash_val]
+next
+str1=join(c,"<#CR>")
+result=split(str1,"<#CR>")
 fend
 
 endclass
