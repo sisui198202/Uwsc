@@ -1,0 +1,137 @@
+//------------------ファイル操作$
+
+Function	ReadAlltext(r_fp) //テキストを全て読込_ファイル操作
+	Dim fid	= FOpen(r_fp)
+	Result	= FGet(fid, F_ALLTEXT)
+	FClose(fid)
+FEnd
+
+
+Procedure	WriteAlltext(w_fp,str) //テキストを全て書込(上書き)_ファイル操作
+	fid = FOpen(w_fp, F_READ or F_WRITE8 or F_NOCR)
+	FPut(fid, str, F_ALLTEXT)
+	FClose(fid)
+FEnd
+
+Procedure	WriteAlltext1(w_fp,str) //テキストを全て書込(追加)_ファイル操作
+	Dim fid	= FOpen(w_fp, F_READ or F_WRITE8 or F_NOCR)
+	FPut(fid, str)
+	FClose(fid)
+FEnd
+
+Function GetRow(r_fp) //ファイルの行数取得_パス_ファイル操作
+	fid=fopen(r_fp,F_READ)
+	row_total_number=fget(fid,-1)
+	Result=row_total_number
+	fclose(fid)
+Fend
+
+Function　　GetRow1(str) //テキストの行数を取得_ファイル操作
+　　Dim o_re = CreateOLEObj("VBScript.Regexp")
+　　o_re.Global = TRUE
+　　o_re.pattern = "\n"
+　　v_col = o_re.Execute(str)
+　　If　　v_col.Count = 0　　Then result　　= 1　　Else result　　= v_col.Count + 1
+FEnd
+
+Function	GetRowStr(str, a_LineNum) //テキストブロックから指定行を取得_ファイル操作
+		str	= "<#CR>" + str + "<#CR>"
+		t_Start	= Pos("<#CR>", str, a_LineNum)
+		t_End	= Pos("<#CR>", str, a_LineNum + 1)
+		Result	= Trim(Copy(str, t_Start, t_End - t_Start))
+FEnd
+
+
+Function GetRow2(str)	//記事アップロード時の2行目が空白かどうかでタイトル入力するか判定_ファイル操作
+	r_fp="C:\Users\user\Desktop\Verification\dummy\index.html"
+	fid=fopen(r_fp,F_WRITE8 or F_NOCR)
+	fput(fid,str)
+	fclose(fid)
+	fid1=fopen(r_fp,F_read)
+	gyou=fget(fid1,-1)
+	str=fget(fid1,2)
+	Result=str
+	fclose(fid)
+Fend
+
+
+procedure Fileintegration(r_arr[],w_fp) //ファイル統合し、新ファイル作成_ファイル操作
+	dim utuwa
+	for i in r_arr
+		utuwa=utuwa+ReadAlltext(i)
+	next
+	WriteAlltext(w_fp,utuwa)
+fend
+
+procedure FolderInfileOpen(dp) //フォルダー内ファイルを一気開く_ファイル操作
+getdir(dp)
+
+for i = LENGTH(GETDIR_FILES)-1 to 0 step-1
+r_fp=dp+"\"+GETDIR_FILES[i]
+
+dim Cmd[] = "start",r_fp
+doscmd(join(cmd))
+next
+fend
+
+
+function FgetHaiSlct(r_fp) //ファイル内容、配列作成_ファイル操作
+	fid=fopen(r_fp, F_READ or F_WRITE)
+	str=fget(fid,F_ALLTEXT)
+	hai=split(str,"<#CR>")
+	SLCT=SLCTBOX(SLCT_BTN OR SLCT_STR,0,"",hai)
+	result = SLCT
+	fclose(fid)
+fend
+
+
+
+procedure PrintdpFilecopy() //印刷フォルダーにコピー分のファイル作成_ファイル操作
+	dp="C:\Users\user\Documents\印刷\"
+	r_fp=getstr(0)
+	dim Cmd[] = "xcopy",r_fp,dp
+	doscmd(join(cmd))
+fend
+
+function SelectDpFileCreate(dp,arr[],str) //dpの指定ディレクトリにファイル作成、配列要素がファイル名、strをテキスト書込_ファイル操作
+for i = 0 to LENGTH(arr)-1
+	fn=arr[i]
+	w_fp=dp+fn+".html"
+	TRY
+		COMMON.WriteAlltext(w_fp,str)
+	EXCEPT
+		sendstr(0, TRY_ERRMSG+"<#CR>"+TRY_ERRLINE)
+	ENDTRY
+next
+result =0
+fend
+
+function FileinRowPassOpenReplace(passes_fp,replace_fp,dp) //ファイル内の各行にあるフルパスを開き、置き換えファイルで指定した文字列で一括置き換え_ファイル操作
+
+OPTION SPECIALCHAR
+
+Dim arr = COMMON.ArrayCreate(passes_fp) //フルパスの配列
+
+Delimiter="#" //replacefile、「#」で区切る
+
+dim arr1[-1],arr2[-1]　//arr1:置き換えされる文字列,arr2:置き換え後文字列
+
+COMMON.RowDelimiterArr2Create(replace_fp,Delimiter,arr1,arr2)
+
+
+for i = 0 to LENGTH(arr)-1 //全行数分
+	str=COMMON.ReadAllText(arr[i])
+	for y = 0 to Length(arr1)-1　//置き換え一覧
+		str=chgmoj(str, arr1[y], arr2[y])		
+	next
+
+	fn=COMMON.Getdpfn(arr[i])
+	w_fp=dp+fn //別ファイルとして新規作成
+	COMMON.WriteAllText(w_fp,str) 
+	// COMMON.WriteAllText(arr[i],str) //既存ファイルに書換
+next
+
+result = true
+fend
+
+//------------------ファイル操作$

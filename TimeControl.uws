@@ -1,0 +1,24 @@
+//------------------時間操作$
+function hhnn(num) //小数点付き数字→hh:nn、ex)3.5→3:30_時間操作
+h1=int(num)// 時間
+h1a=num-h1
+
+if h1a>0 then
+h1b=h1a*60
+else
+h1b="00"
+endif
+
+hn=h1+":"+h1b
+result = hn
+fend
+
+
+function PassDate(OldDate) //経過日数取得、OldDate=YYYYMMDD_時間操作
+GetTime()
+Dim SecNew	= GetTime(0, G_TIME_YY4 + "/" + G_TIME_MM2 + "/" + G_TIME_DD2)
+Dim SecOld	= GetTime(0, OldDate)
+Dim SecDif	= SecOld-SecNew
+result =(SecDif / (60*60*24))
+fend
+//------------------時間操作$

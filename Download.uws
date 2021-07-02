@@ -1,0 +1,38 @@
+
+
+//ダウンロードセット1
+Procedure AdoDownload(url,dl_pas="",dl_name="",over_w=defalt_over_w) //ダウンロード処理_ダウンロード
+	PUBLIC Stream=CreateOLEObj( "ADODB.Stream" )
+	PUBLIC oHttp=CreateOLEObj("MSXML2.XMLHTTP")
+PUBLIC defalt_over_w=false   //上書き初期設定（上書きする:True しない:false）
+sleep(1)
+ifb dl_name=""
+	dl_name=Betweenstr(url,"/",,-1)
+endif
+ifb !(dl_pas="")
+	ifb !(copy(dl_pas,Length(dl_pas))="\")
+		dl_pas=dl_pas+"\"
+	endif
+endif
+dl_pas=dl_pas+dl_name
+oHttp.Open("GET",url,0)
+oHttp.Send
+GetStream(oHttp.responseBody,dl_pas,dl_name,over_w)
+Fend
+
+
+Procedure GetStream(obj,dl_pas,dl_name,over_w) //ダウンロード処理_ダウンロード
+	ifb over_w
+		over_w=2
+	else
+		over_w=1
+	endif
+	Stream.Open
+	Stream.Type=1
+	Stream.Write=obj
+	COM_ERR_IGN
+	Stream.SaveToFile(dl_pas,over_w)   
+	COM_ERR_RET
+	Stream.Close
+Fend
+//ダウンロードセット1

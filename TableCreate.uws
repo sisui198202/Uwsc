@@ -1,0 +1,195 @@
+//------------------表作成$
+
+procedure TableCreate(area_r_fp,KyuzinNumber_r_fp,w_fp,companyname="") //縦表1_表作成
+
+Dim arr1 = ArrayCreate(area_r_fp)
+Dim arr2 = ArrayCreate(KyuzinNumber_r_fp)
+
+// ここからHTML生成
+html = "<table class=<#DBL>table<#DBL>>"
+
+html = html + "【"+companyname+"地域別経理求人数】<#CR>"+"<tr>"
+html = html + "<#CR>"+"<th>勤務地</th>"
+
+for y = 0 to length(arr1)-1//列のエージェント名4列
+　html = html + "<#CR>" + "<TH>" + arr1[y]+ "</TH>"　//----- 1行目は見出し
+next
+html = html + "<#CR>"+ "</TR>"
+html = html + "<#CR>"+"<TBODY>"
+html = html + "<#CR>"+"<tr>"
+html = html + "<#CR>"+"<td>求人数</td>"
+
+for i = 0 to length(arr2)-1
+　html = html + "<#CR>" +"<TD>" + arr2[i]+ "</TD>"　
+next
+
+html = html + "<#CR>"+"</TR>"
+html = html + "<#CR>"+"</TBODY>"
+html = html + "<#CR>"+"</TABLE>"
+WriteAlltext(w_fp,html)
+fend
+
+
+procedure TableCreateArrRead(r_fp,w_fp,companyname="") //縦表2_表作成
+
+dim i=0
+row=GetRow(r_fp)
+
+fid=fopen(r_fp,F_READ)
+
+arr1=SafeArray(0,row)
+arr2=SafeArray(0,row)
+
+for y = 1 to row
+str=fget(fid,y)
+arr1[i]=token(":",str) //見出し
+arr2[i]=token(":",str) //求人数
+i=i+1
+next
+fclose(fid)
+
+html = "<table class=<#DBL>table<#DBL>>"
+
+html = html + "【"+companyname+"地域別経理求人数】<#CR>"+"<tr>"
+html = html + "<#CR>"+"<thead>"
+html = html + "<#CR>"+"<tr>"
+html = html + "<#CR>"+"<th>勤務地</th>"
+
+for z = 0 to row-1//列のエージェント名4列
+　html = html + "<#CR>"+"<TH>" + arr1[z]+ "</TH>"　//----- 1行目は見出し
+next
+html = html + "<#CR>"+"</TR>"
+html = html + "<#CR>"+"<TBODY>"
+html = html + "<#CR>"+"<tr>"
+html = html + "<#CR>"+"</thead>"
+html = html + "<#CR>"+"<td>求人数</td>"
+
+
+for x = 0 to row-1
+　html = html + "<#CR>"+"<TD>"+arr2[x]+ "</TD>"　
+next
+
+html = html + "<#CR>"+"</TR>"
+html = html + "<#CR>"+"</TBODY>"
+html = html + "<#CR>"+"</TABLE>"
+WriteAlltext(w_fp,html)
+fend
+
+
+procedure TableCreateArrReadUpdata(r_fp,w_fp,title="") //縦表 表タイトル_表作成
+
+GETTIME()
+time =G_TIME_yy2+"/"+G_TIME_mm2+"/"+G_TIME_dd2
+hiduke="更新日:"+time
+
+dim i=0
+row=getrow(r_fp)
+row1=row-1
+fid=fopen(r_fp,F_READ)
+
+arr1=SafeArray(0,row1)
+arr2=SafeArray(0,row1)
+
+for y = 1 to row
+    str=fget(fid,y)
+    arr1[i]=token(":",str)
+    arr2[i]=token(":",str)
+    i=i+1
+next
+resize(arr1,row1)
+resize(arr2,row1)
+fclose(fid)
+
+// ここからHTML生成
+html = "<table class=<#DBL>table<#DBL>>"
+html = html + "<#CR>"+hiduke+title
+// html = html + "<#CR>" + "<caption>"+hiduke+title+"</caption>"
+html = html + "<#CR>"+"<thead>"
+html = html + "<#CR>"+"<tr>"
+html = html + "<#CR>"+"<th></th><#CR><th></th>"
+html = html + "<#CR>"+ "</tr>"
+html = html + "<#CR>"+"</thead>"
+html = html + "<#CR>"+"<tbody>"
+for i = 0 to row-1
+  html = html + "<#CR>"+"<tr>"
+　html = html + "<#CR>"+"<td>"+arr1[i]+"</td>"　
+　html = html + "<#CR>"+"<td>"+arr2[i]+"</td>"　
+　html = html + "<#CR>"+"</tr>"
+next
+
+html = html + "<#CR>"+"</tbody>"
+html = html + "<#CR>"+"</table>"
+html =chgmoj(html,"<#CR>","")
+WriteAlltext(w_fp,html)
+fend
+
+procedure VerticalTableCreateArrReadTitle2(r_fp,w_fp,title1,title2) //縦表、タイトル1、タイトル2_表作成
+GETTIME()
+time =G_TIME_yy2+"/"+G_TIME_mm2+"/"+G_TIME_dd2
+hiduke="【更新日:"+time+"】"
+
+dim i=0
+row=getrow(r_fp)
+fid=fopen(r_fp,F_READ)
+row1=row-1
+arr1=SafeArray(0,row1)
+arr2=SafeArray(0,row1)
+
+for y = 1 to row
+    str=fget(fid,y)
+    arr1[i]=token(":",str)
+    arr2[i]=token(":",str)
+    i=i+1
+next
+
+resize(arr1,row1)
+resize(arr2,row1)
+fclose(fid)
+
+// ここからHTML生成
+html = "<table class=<#DBL>table<#DBL>>"
+html = html + "<#CR>"+"<thead>"
+html = html + "<#CR>"+"<tr>"
+html = html + "<#CR>"+"<th>"+title1+"</th><#CR><th>"+title2+"</th>"
+html = html + "<#CR>"+ "</tr>"
+html = html + "<#CR>"+"</thead>"
+html = html + "<#CR>"+"<tbody>"
+for i = 0 to row-1
+  html = html + "<#CR>"+"<tr>"
+　html = html + "<#CR>"+"<td>"+arr1[i]+"</td>"　
+　html = html + "<#CR>"+"<td>"+arr2[i]+"</td>"　
+　html = html + "<#CR>"+"</tr>"
+next
+
+html = html + "<#CR>"+"</tbody>"
+html = html + "<#CR>"+"</table>"
+html =chgmoj(html,"<#CR>","")
+WriteALLText(w_fp,html)
+fend
+
+function SideTableCreate(w_fp,var arr1[],var arr2[],updata,title1="",title2="") //横 th有り_表作成
+html = "<#CR><table class=<#DBL>table<#DBL>>"
+html = html + "<#CR>"+"<caption>"+updata+"</caption>"
+html = html + "<#CR>"+"<thead>"
+html = html + "<#CR>"+"<tr>"
+
+html = html + "<#CR>"+"<th>"+title1+"</th>"　
+for i = 0 to LENGTH(arr1)-1
+　html = html + "<#CR>"+"<td>"+arr1[i]+"</td>"　
+next
+　html = html + "<#CR>"+"</tr>"
+html = html + "<#CR>"+"</thead>"
+html = html + "<#CR>"+"<tr>"
+
+html = html + "<#CR>"+"<th>"+title2+"</th>"　
+for i = 0 to LENGTH(arr2)-1
+　html = html + "<#CR>"+"<td>"+arr2[i]+"</td>"　
+next
+　html = html + "<#CR>"+"</tr>"
+html = html + "<#CR>"+"</table>"
+html =chgmoj(html,"<#CR>","")
+result = html
+WriteALLText(w_fp,html)
+fend
+
+//------------------表作成$

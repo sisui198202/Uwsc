@@ -1,0 +1,266 @@
+//------------------正規表現$
+
+Function regExe(str, Pattern, IgnoreCase=TRUE, Global=TRUE) //Matches基本_正規表現
+Public o_Reg=CREATEOLEOBJ("VBScript.RegExp")
+o_Reg.IgnoreCase=IgnoreCase
+o_Reg.Global=Global
+o_Reg.Pattern=Pattern
+Matches=o_Reg.Execute(str)
+Result=Matches
+Fend
+
+Function regValue(str, Pattern, IgnoreCase=TRUE, Global=true) //Matches.Item(i).Value(マッチしたもの全てを結果に。)_正規表現
+dim utuwa
+o_Reg=CREATEOLEOBJ("VBScript.RegExp")
+o_Reg.IgnoreCase=IgnoreCase
+o_Reg.Global=Global
+o_Reg.Pattern=Pattern
+o_Reg.Multiline = TRUE
+Matches=o_Reg.Execute(str)
+for i = 0 to Matches.count-1
+utuwa=utuwa+Matches.Item(i).Value+"<#CR>"
+next
+Result=utuwa
+Fend
+
+Function　RegReplace(str,pat,replacestr= null) //正規表現置き換え、testでパターン有りなしチェック有り、Global=true版_正規表現
+	Dim o_Reg= CreateOLEObj("VBScript.Regexp") 
+    o_Reg.Global = TRUE 
+    o_Reg.Multiline = TRUE 
+    o_Reg.pattern = pat
+	Ifb replacestr = null
+        If  o_Reg.Test(str) = 0 Then
+        result = FALSE
+        Else
+        result = TRUE
+		endif
+	Else
+    result = o_Reg.Replace(str,replacestr)
+	EndIf
+FEnd
+
+Function　RegReplace1(str,pattern,replacestr = null,Global=false) //正規表現置き換えGlobal=false版_正規表現
+Dim o_Reg	= CreateOLEObj("VBScript.Regexp")
+o_Reg.Global = Global
+o_Reg.Multiline = TRUE
+o_Reg.pattern = pattern; 
+Ifb replacestr = null
+    If  o_Reg.Test(str) = 0	Then
+    result = FALSE
+    Else
+    result = TRUE
+    endif
+Else			
+Result = o_Reg.Replace(str, replacestr)
+EndIf
+FEnd
+
+Function regSubmatch(str, Pattern, IgnoreCase=TRUE, Global=true) //サブマッチ基本単独_正規表現
+o_Reg=CREATEOLEOBJ("VBScript.RegExp")
+o_Reg.IgnoreCase=IgnoreCase
+o_Reg.Global=Global
+o_Reg.Pattern=Pattern
+Matches=o_Reg.Execute(str)
+for i = 0 to Matches.count-1
+Result=Matches.Item(i).SubMatches(0)
+next
+Fend
+
+Function regSubmatch1(str, Pattern, IgnoreCase=TRUE, Global=true) //サブマッチ一致全部取得_正規表現
+    dim utuwa
+    o_Reg=CREATEOLEOBJ("VBScript.RegExp")
+    o_Reg.IgnoreCase=IgnoreCase
+    o_Reg.Global=Global
+    o_Reg.Pattern=Pattern
+    Matches=o_Reg.Execute(str)
+    for i = 0 to Matches.count-1
+        utuwa=utuwa+Matches.Item(i).SubMatches(0)+"<#CR>"
+    next
+    result=utuwa
+Fend
+
+
+Function　RegExist(str, pattern) //文字列の存在をチェック_正規表現
+	Dim o_Reg	= CreateOLEObj("VBScript.Regexp")
+	o_Reg.Global    	= TRUE	//	複数結果を取得。
+	o_Reg.IgnoreCase	= TRUE	//	大文字・小文字の区別は無し。
+	o_Reg.Multiline 	= TRUE	//	各行に行頭 ^ と行末 $ を発生させる。
+	o_Reg.pattern   	= pattern
+	If	o_Reg.Test(str) = 0	Then
+	Result	= FALSE
+	Else
+	Result	= TRUE
+	endif
+FEnd
+
+function regRowArrCreate(str,Pattern) //各行に対して正規表現処理して配列に入れる_正規表現
+
+public arr[-1]
+dim i=0
+w_fp="C:\Users\user\Desktop\Verification\dummy\index.html"
+WriteAlltext(w_fp,str)
+
+fid=fopen(w_fp, F_READ)
+row=fget(fid,-1)
+resize(arr,row)
+for y = 1 to row
+str1=fget(fid,y)
+arr[i]=RegValue(str1, Pattern)
+i=i+1
+next
+
+str1=join(arr,"<#CR>",true)
+result=split(str1,"<#CR>",true)
+fclose(fid)
+fend
+
+
+function RowsPassOpenMatchValue(r_fp,Pattern) //ファイル内の各行フルパスを開き、パターン一致でvalue取得_正規表現
+	Dim arr =ArrayCreate(r_fp)
+	dim utuwa
+	for i = 0 to Length(arr)-1
+		str=ReadAllText(arr[i])
+		utuwa=utuwa+regValue(str,Pattern)+"<#CR>"
+	next
+	utuwa1=DuplicateDelete1(utuwa)
+	utuwa1=BlankRowDelete1(utuwa1)
+	result = utuwa1
+fend
+
+
+function RowsPassOpenMatchSubMatch1(r_fp,Pattern) //ファイル内の各行フルパスを開き、パターン一致でsubmatchvalue取得_正規表現
+	Dim arr =ArrayCreate(r_fp)
+	dim utuwa
+	for i = 0 to Length(arr)-1
+		str=ReadAllText(arr[i])
+		utuwa=utuwa+regSubmatch1(str,Pattern)+"<#CR>"
+	next
+	utuwa1=DuplicateDelete1(utuwa)
+	utuwa1=BlankRowDelete1(utuwa1)
+	result = utuwa1
+fend
+
+function RowsPassOpenRegExist(r_fp,Pattern) //ファイル内の各行フルパスを開き、パターン一致でパターン一致したフルパスを取得_正規表現
+	Dim arr =ArrayCreate(r_fp)
+	dim utuwa
+	for i = 0 to Length(arr)-1
+		str=ReadAllText(arr[i])
+		exi=RegExist(str,Pattern)
+		if exi=1 then
+			utuwa=utuwa+arr[i]+"<#CR>"
+		endif
+	next
+	result = utuwa
+fend
+
+function DpinFileRowsPassOpenMatchValue(dp,Pattern) //指定ディレクトリー内ファイル、各ファイル内の各行フルパスを開き、パターン一致でvalue取得_正規表現
+
+	getdir(dp)
+	dim utuwa0
+
+	for i = 0 to Length(GETDIR_FILES)-1
+		utuwa0=utuwa0+dp+GETDIR_FILES[i]+"<#CR>"
+	next
+
+	wr_fp="C:\Users\user\Desktop\Verification\abc.txt"
+	COMMON.WriteAllText(wr_fp,utuwa0)
+
+	Dim arr =COMMON.ArrayCreate(wr_fp)
+	dim utuwa
+	for i = 0 to Length(arr)-1
+		str=COMMON.ReadAllText(arr[i])
+		utuwa=utuwa+COMMON.regValue(str,Pattern)+"<#CR>"
+	next
+	utuwa1=COMMON.DuplicateDelete1(utuwa)
+	utuwa1=COMMON.BlankRowDelete1(utuwa1)
+	result = utuwa1
+fend
+
+function DpinFileRowsPassOpenRegExist(dp,Pattern) //指定ディレクトリー内ファイル、各ファイル内の各行フルパスを開き、パターン一致が有りなし取得_正規表現
+
+	getdir(dp)
+	dim utuwa0
+
+	for i = 0 to Length(GETDIR_FILES)-1
+		utuwa0=utuwa0+dp+GETDIR_FILES[i]+"<#CR>"
+	next
+
+	wr_fp="C:\Users\user\Desktop\Verification\abc.txt"
+	COMMON.WriteAllText(wr_fp,utuwa0)
+
+	Dim arr =COMMON.ArrayCreate(wr_fp)
+	dim utuwa
+	for i = 0 to Length(arr)-1
+		str=COMMON.ReadAllText(arr[i])
+		exi=COMMON.RegExist(str,Pattern)
+
+		if exi=1 then //指定したパターンが有れば、そのファイル名をいれていく
+			utuwa=utuwa+arr[i]+"<#CR>"
+		endif
+		
+	next
+	result = utuwa
+fend
+
+
+function FileinRegSubmatch1RowsPassOpenRegExist(r_fp,Pattern,Pattern1) //1つファイル内にあるフルパスを抽出して、そのパスを1つずつ開いて指定パターンが一致するファイルを検索する。_正規表現
+	str=COMMON.ReadAllText(r_fp)
+	pass=COMMON.regSubmatch1(str, Pattern)
+	pass=chgmoj(pass, "<#DBL>", "")
+	wr_fp="C:\Users\user\Desktop\Verification\abc.txt"
+	COMMON.WriteAllText(wr_fp,pass)
+	passes_str=COMMON.RowsPassOpenRegExist(wr_fp,Pattern1) 
+	result =passes_str
+fend
+
+Function　ShowResult(str,msg=false) //数字と文字列のパターン一致結果を返す、msg有無切替_正規表現
+	public o_reg	= CreateOLEObj("VBScript.Regexp")
+	o_reg.Global 	= TRUE
+	o_reg.pattern	= "\d+"
+	matches=o_reg.execute(str)
+	Dim i, t_Max = matches.Count
+	dim utuwa,utuwa1
+
+	For i = 1	To t_Max
+		utuwa=utuwa+ (i + "/" + t_Max) + " = " + matches.Item(i - 1).Value + "<#CR>"
+	Next
+
+	public o_reg1	= CreateOLEObj("VBScript.Regexp")
+	o_reg1.Global 	= TRUE
+	o_reg1.pattern	= "\D+"
+	matches1=o_reg1.execute(str)
+	Dim y, t_Max1 = matches1.Count
+
+	For y = 1	To t_Max1
+		utuwa1=utuwa1+ (y + "/" + t_Max1) + " = " + matches1.Item(y - 1).Value + "<#CR>"
+	Next	
+
+	if msg=false then //msg無し
+		total="数字<#CR>"+utuwa+"文字列<#CR>"+utuwa1
+	else //msg有り
+		total=utuwa+utuwa1
+	endif
+
+	Result=total
+
+FEnd
+
+
+function IETabReg(Pattern) //アクティブIEに対し正規表現でデータ取得_正規表現
+Dim i, ObjShell = CreateOleObj("Shell.Application")
+dim utuwa
+
+For i = 0 To ObjShell.Windows.Count - 1
+	With ObjShell.Windows.Item(i)
+		Try
+			source=.document.body.innerhtml
+			Matches=RegExe(source,Pattern)//スクリプト内で指定（Pattern）
+			utuwa=utuwa+Matches.Item(0).Value+"<#CR>"
+		Except
+		EndTry
+	EndWith
+Next
+result = utuwa
+fend
+
+//------------------正規表現$

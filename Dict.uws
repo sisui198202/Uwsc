@@ -1,0 +1,42 @@
+//------------------連想配列$
+
+procedure Where(var arr[], expression) //配列やリストの指定した条件を満たす要素のみを取得出来る_連想配列
+    Filter(arr, expression)
+fend
+
+procedure Select(var arr[], expression) //条件に合う要素を探して集め、ブロック引数itemに要素を入れながらブロックを繰り返し、ブロックの戻り値が真になったときの要素を集め、新しい配列にして返す_連想配列
+    Map(arr, expression)
+fend
+
+Function　HashPop(num, hash[]) //指定番号のvalueを表示させ、そのkeyを取得する_連想配列
+	HashTbl	h_MenuT
+	Dim i, arr = Split(num, ",")
+	For i = 0	To Length(arr) - 1
+		h_MenuT[hash[arr[i], HASH_KEY]]	= hash[arr[i], HASH_VAL]
+	Next
+
+	Dim re	= PopupMenu(h_MenuT)
+	If  re > -1	Then result	= h_MenuT[Re, HASH_KEY]
+FEnd
+
+function GetkeyArr(r_fp,separate) //連想配列1_連想配列
+hashtbl hash
+
+arr =ArrayCreate(r_fp)
+
+for i in arr
+b_1=token(separate, i)
+hash[b_1]=i
+next
+
+dim len=LENGTH(hash)-1,c[len],d[len]
+
+for y = 0 to len
+c[y]=hash[y,hash_key]
+d[y]=hash[y,hash_val]
+next
+str1=join(c,"<#CR>")
+result=split(str1,"<#CR>")
+fend
+
+//------------------連想配列$

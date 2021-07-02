@@ -1,0 +1,66 @@
+//------------------マウス関連$
+
+Procedure OKButton(btn_name="OK",click=false) //msgboxのボタンにマウスをあわせる、btn_nameは大文字小文字区別しない_マウス関連
+　　wid = GETID(,"TUmsgDlg_uwsc",-1)//class名で指定
+　　CLKITEM(wid, btn_name, CLK_BTN or CLK_MUSMOVE,click)// クリックはしない
+Fend
+
+procedure SlctTitlebarClick() //slctBoxタイトルバークリック_マウス関連
+　id = GETID("UWSC - " + , "TUslctBox_uwsc",-1)
+　x = status(id, ST_x) + status(id, ST_WIDTH) / 2
+　y = status(id, ST_Y)
+　btn(LEFT, CLICK, x, y)
+fend
+
+procedure SlctBatuClickAlt() //altキーでslctの「x」をクリック_マウス関連
+while TRUE
+	if getkeystate(VK_alt) then
+	　id = GETID("UWSC - " + , "TUslctBox_uwsc",-1)
+	　x = status(id, ST_x) + status(id, ST_WIDTH)-20
+	　y = status(id, ST_Y)+10
+	　btn(LEFT, CLICK, x, y)
+	endif
+wend
+fend
+
+procedure SlctBatuMusmove() //slctの「x」にマウス移動_マウス関連
+id = GETID("UWSC - " + , "TUslctBox_uwsc",-1)
+x = status(id, ST_x) + status(id, ST_WIDTH)-20
+y = status(id, ST_Y)+10
+mmv(x, y)
+fend
+
+
+// procedure SlctTitlebarClick() //slctBoxタイトルバークリック_マウス関連
+// 　id = GETID("UWSC - " + Get_UWSC_Name, "TUslctBox_uwsc",-1)
+// 　x = status(id, ST_x) + status(id, ST_WIDTH) / 2
+// 　y = status(id, ST_Y)
+// 　btn(LEFT, CLICK, x, y)
+// fend
+
+// procedure SlctBatuClickAlt() //altキーでslctの「x」をクリック_マウス関連
+// while TRUE
+// 	if getkeystate(VK_alt) then
+// 	　id = GETID("UWSC - " + Get_UWSC_Name, "TUslctBox_uwsc",-1)
+// 	　x = status(id, ST_x) + status(id, ST_WIDTH)-20
+// 	　y = status(id, ST_Y)+10
+// 	　btn(LEFT, CLICK, x, y)
+// 	endif
+// wend
+// fend
+
+// procedure SlctBatuMusmove() //slctの「x」にマウス移動_マウス関連
+// id = GETID("UWSC - " + Get_UWSC_Name, "TUslctBox_uwsc",-1)
+// x = status(id, ST_x) + status(id, ST_WIDTH)-20
+// y = status(id, ST_Y)+10
+// mmv(x, y)
+// fend
+
+procedure TitlebarClick(id) //タイトルバークリック_マウス関連
+	x1 = status(id, ST_x) + status(id, ST_WIDTH) / 2
+	y1 = status(id, ST_Y) + 10
+	mmv(x1, y1)
+	btn(left)
+fend
+
+//------------------マウス関連$

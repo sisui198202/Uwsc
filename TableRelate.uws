@@ -1,0 +1,87 @@
+//------------------表示関係$
+
+function SlctKeyAllocation(type, timeout, msg, item[]) //GuiKeySelect_表示関係
+//type:SLCT_BTN,SLCT_CHK,SLCT_RDO
+
+　const slct_order = "asdfjkl;gh:qweruiopzxcvnm,.tyb@"
+　　i = 0
+
+　　for l in slct_order
+    　　　item[i] = item[i] + " (&" + l + ")"
+    　　　i = i + 1
+
+　　　if i >= length(item) then //配列要素数を上限として繰り返し
+    　　　　break
+　　　endif
+　　next
+　　result = global.slctbox(type, timeout, msg, item)
+// 　　result = slctbox(type, timeout, msg, item) //こちらも同じ結果になる
+fend
+
+FUNCTION fuk(txt,color=3,fontsize="") //吹き出し指定色でメッセージ表示_表示関係
+    Select color
+    CASE 1 //文字色:白、背景:青
+        fukIDASI(txt,0,50,0,fontsize,,$FFFFFF,$CC0000)
+    CASE 2 //文字色:白、背景:緑
+        fukIDASI(txt,0,50,0,fontsize,,$FFFFFF,$008800)
+    CASE 3 //文字色:黒、背景:黄色
+        fukIDASI(txt,0,50,0,fontsize)
+    CASE 4 //文字色:白、背景:黒
+        fukIDASI(txt,0,50,0,fontsize,,$FFFFFF,$555555)
+    SELEND
+    sleep(3)
+    fukIDASI()//吹き出し消去
+    reSULT=1
+FEND
+
+
+function fukalt(var msg[]) //altを押すごとに次の吹き出しを表示させる_表示関係
+    x=1000
+    y=0
+    direction=0
+    fontsize=14
+
+    For i = 0 To LENGTH(msg)-1
+        fukIDASI(msg[i],x,y,direction,fontsize,,)
+        while TRUE
+        sleep(0.1)
+        if getkeystate(VK_alt) then
+        break
+        endif
+        wend
+        fukIDASI()
+    Next
+
+    result = 0
+fend
+
+// Procedure	ThInputIME() //日本語入力に切替_表示関係
+// 	MouseOrg(GetInputHND())
+// 		If	! GetKeyState(TGL_IME)	Then KBD(VK_KANJI)// 日本語入力に変更
+// 	MouseOrg(0)
+// FEnd
+
+// Function	GetInputHND(a_Title = "") //入力履歴の管理。表示選択付。_表示関係
+// 	If	a_Title = ""	Then a_Title = GET_UWSC_NAME
+// 	Result	= IDtoHND(GetID(a_Title, "TFInpBox.UnicodeClass", 3))
+// FEnd
+
+
+Procedure Countdown(start_Second,end_Second,step_time,msg)　////吹き出し指定秒カウントダウン_表示関係
+	FOR A = start_Second TO end_Second STEP -step_time
+
+		FUKIDASI(msg + A + "秒",100,100,0,40) 
+		SLEEP(step_time) 
+
+	NEXT
+Fend
+
+Procedure Countdown1(start) //吹き出し3秒間表示_表示関係
+	dim i
+	for i=start to 1 step -1
+		fukidasi(i + " カウントダウン",0,0)
+		sleep(1)
+	next
+fend
+
+//------------------表示関係$
