@@ -1,0 +1,168 @@
+//------------------文字列操作$
+
+function DuplicateDelete(r_fp) //重複行削除r_fp__文字列操作
+
+HASHTBL hash = HASH_CASECARE // ●HASH_SORT はデフォでTrue ?
+
+fp=fopen(r_fp,F_READ)
+for i=1 to fget(fp,-1)
+    hash[fget(fp,i)]=1 // 1 はダミー
+next
+fclose(fp)
+
+dim utuwa
+
+for i=0 to length(hash)-1
+utuwa=utuwa+hash[i, HASH_KEY]+"<#CR>"
+next
+result=utuwa
+fclose(fp)
+fend
+
+
+function DuplicateDelete1(str) //重複行削除str__文字列操作
+
+HASHTBL hash = HASH_CASECARE
+
+w_fp="C:\Users\user\Desktop\Verification\abc.txt"
+COMMON.WriteAllText(w_fp,str)
+
+
+fid=fopen(w_fp,F_READ)
+for i=1 to fget(fid,-1)
+    hash[fget(fid,i)]=1 // 1 はダミー
+next
+fclose(fid)
+
+dim utuwa
+
+for i=0 to length(hash)-1
+utuwa=utuwa+hash[i, HASH_KEY]+"<#CR>"
+next
+result=utuwa
+fclose(fid)
+fend
+
+
+Function FnBan(fn) //ファイル名禁止文字変換_文字列操作
+	Dim UselessChar_Befor[] =  "*","?","<#dbl>","<",">","|"," ","/","　","｜",":"
+	Dim UselessChar_After[] = "","","","","","","","","","",""
+	Dim i
+	For i = 0 To Length(UselessChar_Befor) - 1
+		fn = replace(fn, UselessChar_Befor[i], UselessChar_After[i])
+	Next
+	Result = fn
+FEnd
+
+
+function BlankRowDelete(r_fp) //空行削除文字列操作fp_文字列操作
+str=ReadAlltext(r_fp)
+
+pattern="^(\s|　)*(\r\n|\r|\n)"
+RESULT = regReplace(str,pattern,"")
+fend
+
+function BlankRowDelete1(str) //空行削除str_文字列操作
+pattern="^(\s|　)*(\r\n|\r|\n)"
+RESULT = regReplace(str,pattern,"")
+fend
+
+
+Function　ThousandSeparate(str_num) //数字3桁区切りにする_文字列操作
+　　Dim o_RE　　 = CreateOLEObj("VBScript.Regexp")
+　　o_RE.pattern = "^(-?\d+)(\d{3})" // マイナス値も対応
+　　Repeat
+　　　　Result　= str_num
+　　　　str_num 　= o_RE.Replace(str_num, "$1,$2")
+　　Until　　Result = str_num
+FEnd
+
+
+function randomtext(len, l_alp = true, s_alp = true, num = true) //ランダムテキスト生成_文字列操作
+    c = ""
+    if l_alp then c = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + c
+    if s_alp then c = "abcdefghijklmnopqrstuvwxyz" + c
+    if num   then c = "0123456789" + c
+
+    s = ""
+    for i=1 to len
+        s = s + copy(c, random(length(c)), 1)
+    next
+
+    result = s
+
+// len：生成する文字の数
+// l_alp：大文字の英字を含むか（true：含む,false：含まない）
+// s_alp：小文字の英字を含むか（true：含む,false：含まない）
+// num：数字を含むか（true：含む,false：含まない）
+
+fend
+
+function RowEndAddCr2(r_fp) //各行の後ろに改行を2ついれる_文字列操作
+dim utuwa
+Dim arr =ArrayCreate(r_fp)
+for i = 0 to Length(arr)-1
+utuwa=utuwa+arr[i]+"<#CR><#CR>"
+next
+result =utuwa
+fend
+
+FUNCTION translate(str, async=FALSE, method="GET") //日本語から英訳_文字列操作
+    CONST DEF_URL = "https://translate.googleapis.com/translate_a/single?"
+    CONST JA_EN_PARAM = "client=gtx&sl=ja&tl=en&dt=t&q="
+
+    DIM sc
+
+        sc = CREATEOLEOBJ("ScriptControl")
+        sc.Language = "JScript"
+        sc.ExecuteStatement("Array.prototype.Get = function(i) { return this[i]; }")
+
+        DIM http = CREATEOLEOBJ("MSXML2.XMLhttp")
+        http.open(method, DEF_URL + JA_EN_PARAM + ENCODE(ENCODE(str, CODE_UTF8), CODE_URL), FALSE)
+        http.send()
+        reSULT = http.statusText
+        IFB http.status = 200 THEN
+            // JSONをEvalしちゃうのは非推奨
+            DIM res = sc.Eval(http.responseText)
+            reSULT = res.Get(0).Get(0).Get(0)
+        ENDIF
+ FEND
+
+function sort1(str) //ソートデータ取得_文字列操作
+dim a
+// 連想配列の宣言
+HASHTBL data = HASH_SORT
+
+// データを配列に
+dim array_1[50]
+i = 1
+repeat
+　wks = betweenstr("<#CR>" + str + "<#CR>" , "<#CR>" , "<#CR>" , i , true)
+　if wks <> ""
+　　// 地域名
+　　area = betweenstr(wks ,, ":")
+　　// 数量
+　　value = betweenstr(wks , ":" ,)
+　　// 数量を前方ゼロ埋めして10桁揃え
+　　value = format("0", 10 - length(value)) + value
+
+　　// 数量と地域を連結して連想配列に　※値の1はダミーなので何でも良い
+　　data[value + area] = 1
+　　i = i + 1
+　endif
+until wks = ""
+
+for i = (length(data) - 1) to 0 step -1
+　// 地域名
+　area = copy(data[i , HASH_KEY ] , 11)
+　// 数量
+　value = copy(data[i , HASH_KEY ] , 1 , 10 )
+　// 数量が文字型なので数値型に
+　value = val(value)
+　// 出力
+a=a+area + ":" + value+"<#CR>"
+next
+result=a
+Fend
+
+//------------------文字列操作$
